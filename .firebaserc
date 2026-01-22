@@ -1,0 +1,11 @@
+{
+  "projects": {
+    "default": "oahu-car-rentals"
+  },
+  "targets": {
+    "oahu-car-rentals": {
+      "hosting": {}
+    }
+  },
+  "etags": {}
+}

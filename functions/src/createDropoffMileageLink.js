@@ -1,0 +1,137 @@
+import { onRequest } from "firebase-functions/v2/https";
+import { defineSecret } from "firebase-functions/params";
+import { logger } from "firebase-functions";
+import cors from "cors";
+import crypto from "node:crypto";
+
+const LINK_SECRET = defineSecret("LINK_SECRET");
+
+const corsHandler = cors({
+  origin: true,
+  methods: ["POST", "OPTIONS"],
+  allowedHeaders: ["Content-Type"],
+});
+
+function b64url(buf) {
+  return Buffer.from(buf)
+    .toString("base64")
+    .replaceAll("+", "-")
+    .replaceAll("/", "_")
+    .replaceAll("=", "");
+}
+
+function b64urlToBuf(s) {
+  const pad = s.length % 4 === 0 ? "" : "=".repeat(4 - (s.length % 4));
+  const b64 = s.replaceAll("-", "+").replaceAll("_", "/") + pad;
+  return Buffer.from(b64, "base64");
+}
+
+function decrypt(token, secret) {
+  const [ivB64, tagB64, ctB64] = String(token).split(".");
+  if (!ivB64 || !tagB64 || !ctB64) throw new Error("Bad token");
+
+  const key = crypto.createHash("sha256").update(secret, "utf8").digest();
+  const iv = b64urlToBuf(ivB64);
+  const tag = b64urlToBuf(tagB64);
+  const ct = b64urlToBuf(ctB64);
+
+  const decipher = crypto.createDecipheriv("aes-256-gcm", key, iv);
+  decipher.setAuthTag(tag);
+
+  const plaintext = Buffer.concat([decipher.update(ct), decipher.final()]);
+  return JSON.parse(plaintext.toString("utf8"));
+}
+
+function encrypt(payloadObj, secret) {
+  const key = crypto.createHash("sha256").update(secret, "utf8").digest();
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
+
+  const plaintext = Buffer.from(JSON.stringify(payloadObj), "utf8");
+  const ciphertext = Buffer.concat([cipher.update(plaintext), cipher.final()]);
+  const tag = cipher.getAuthTag();
+
+  return `${b64url(iv)}.${b64url(tag)}.${b64url(ciphertext)}`;
+}
+
+export const createDropoffMileageLink = onRequest(
+  { region: "us-central1", secrets: [LINK_SECRET] },
+  (req, res) =>
+    corsHandler(req, res, async () => {
+      try {
+        if (req.method === "OPTIONS") return res.status(204).send("");
+        if (req.method !== "POST") return res.status(405).send("Use POST");
+
+        const adminToken = String(req.query.t || "");
+        if (!adminToken) return res.status(400).json({ ok: false, error: "Missing token" });
+
+        const adminDraft = decrypt(adminToken, LINK_SECRET.value());
+        if (adminDraft.exp && Date.now() > adminDraft.exp) {
+          return res.status(410).json({ ok: false, error: "Link expired" });
+        }
+
+        if (!adminDraft.phase || adminDraft.phase !== "dropoffAdmin") {
+          return res.status(400).json({ ok: false, error: "Invalid link" });
+        }
+
+        const { vin, startDate, endDate, customerEmail, folderId } = adminDraft || {};
+        if (!vin || !startDate || !folderId || !customerEmail) {
+          return res.status(400).json({ ok: false, error: "Invalid link" });
+        }
+
+        const { instructions = "" } = typeof req.body === "object" && req.body ? req.body : {};
+
+        const nowIso = new Date().toISOString();
+        const expMs = adminDraft.exp || Date.now() + 7 * 24 * 60 * 60 * 1000;
+
+        const mileageInToken = encrypt(
+          {
+            vin,
+            startDate,
+            endDate,
+            customerEmail,
+            folderId,
+            phase: "in",
+            createdAt: nowIso,
+            exp: expMs,
+          },
+          LINK_SECRET.value()
+        );
+
+        const mileageInUrl = `https://oahu-car-rentals.web.app/mileageIn?t=${encodeURIComponent(
+          mileageInToken
+        )}`;
+
+        const debug = String(process.env.DEBUG_MODE || "").toLowerCase() === "true";
+
+        if (debug) {
+          return res.status(200).json({
+            ok: true,
+            mileageInUrl,
+            debugEmail: {
+              to: customerEmail,
+              subject: "Dropoff instructions + return checklist",
+              body: [
+                "Dropoff instructions:",
+                instructions || "(none)",
+                "",
+                "When you return the car, please submit final mileage, fuel level, and a dashboard photo using this link:",
+                mileageInUrl,
+                "",
+                "— Oahu Car Rentals",
+              ].join("\n"),
+            },
+            // TODO (non-debug): send email to customer with mileageInUrl (and dropoff instructions)
+          });
+        }
+
+        // TODO (non-debug): send email to customer with mileageInUrl (and dropoff instructions)
+
+        return res.status(200).json({ ok: true, mileageInUrl });
+      } catch (e) {
+        logger.error("createDropoffMileageLink failed", e);
+        const status = e?.status || 500;
+        return res.status(status).json({ ok: false, error: e?.message || "Internal Server Error" });
+      }
+    })
+);

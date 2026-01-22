@@ -1,0 +1,28 @@
+{
+  
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "disallowLegacyRuntimeConfig": true,
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ]
+    }
+  ],
+  "hosting": {
+  "site": "oahu-car-rentals",
+  "public": "dist",
+  "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+  "rewrites": [
+    { "source": "/api/createRentalPackage", "function": "createRentalPackage" },
+    { "source": "/api/createCustomerInfoLink", "function": "createCustomerInfoLink" },
+    { "source": "/api/decodeCustomerInfoLink", "function": "decodeCustomerInfoLink" },
+    { "source": "**", "destination": "/index.html" }
+  ]
+}
+}

@@ -1,0 +1,451 @@
+/* ===============================
+   Theme variables
+   =============================== */
+
+:root {
+  --bg: #eaf4ff;
+  --panel: rgba(255, 255, 255, 0.78);
+  --panel2: rgba(255, 255, 255, 0.92);
+  --text: #0b2545;
+  --muted: #4a6b8a;
+  --border: rgba(11, 37, 69, 0.14);
+  --shadow: 0 12px 30px rgba(15, 40, 70, 0.12);
+
+  --primary: #1f6fc1;
+  --primary-hover: #2f8fe6;
+}
+
+/* ===============================
+   Base
+   =============================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background:
+    radial-gradient(1200px 700px at 15% 0%, rgba(135,200,255,0.35), transparent 60%),
+    radial-gradient(900px 600px at 85% 10%, rgba(180,240,255,0.35), transparent 60%),
+    var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* ===============================
+   Inputs (streamlined)
+   =============================== */
+
+input,
+select,
+textarea {
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid rgba(11, 37, 69, 0.16);
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--text);
+  padding: 9px 10px;
+  font-size: 14px;
+  line-height: 1.2;
+  outline: none;
+}
+
+input[type="date"] {
+  padding: 8px 10px;
+}
+
+select {
+  padding-right: 34px;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(47, 143, 230, 0.18);
+}
+
+/* ===============================
+   Buttons
+   =============================== */
+
+button,
+.button,
+a.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 11px 18px;
+  border-radius: 12px;
+  border: 1px solid var(--primary);
+  background: linear-gradient(180deg, var(--primary-hover), var(--primary));
+  color: #ffffff;
+
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+button:hover,
+a.button:hover {
+  background: linear-gradient(180deg, #3aa0ff, var(--primary-hover));
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.button-secondary {
+  background: rgba(255,255,255,0.92);
+  border: 1px solid rgba(31,111,193,0.55);
+  color: var(--primary);
+}
+
+.button-secondary:hover {
+  background: #ffffff;
+}
+
+/* ===============================
+   Intake / Admin Forms
+   =============================== */
+
+.intakeWrap {
+  width: min(1100px, 92%);
+  margin: 0 auto;
+  padding: 24px 0 54px;
+  --labelW: 160px;
+}
+
+.intakeHeader {
+  margin: 0 0 14px;
+  font-size: 28px;
+}
+
+.intakeForm {
+  display: grid;
+  gap: 16px;
+}
+
+.intakeCard {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 14px;
+  box-shadow: var(--shadow);
+}
+
+.intakeCard h2 {
+  margin: 0 0 10px;
+  font-size: 18px;
+}
+
+/* ===============================
+   Field rows
+   =============================== */
+
+.fieldRow {
+  display: grid;
+  grid-template-columns: var(--labelW) minmax(0, 1fr);
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.fieldLabel {
+  font-size: 14px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.fieldError {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #b42318;
+}
+
+.inputError {
+  outline: 2px solid rgba(255, 120, 120, 0.35);
+}
+
+/* ===============================
+   Grids
+   =============================== */
+
+.grid2,
+.grid3,
+.fileGrid {
+  display: grid;
+  gap: 12px;
+  --labelW: 110px;
+}
+
+.grid2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.grid3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.fileGrid {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+/* ===============================
+   Upload previews
+   =============================== */
+
+.previewCard {
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.previewImg {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+.previewMeta {
+  font-size: 12px;
+  color: var(--muted);
+  display: flex;
+  justify-content: space-between;
+}
+
+/* ===============================
+   Home hero
+   =============================== */
+
+.hero {
+  position: relative;
+  min-height: 72vh;
+  display: grid;
+  align-items: center;
+  overflow: hidden;
+}
+
+.hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    rgba(0,0,0,0.28),
+    rgba(0,0,0,0.22)
+  );
+  pointer-events: none;
+}
+
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  filter: brightness(0.8);
+  transform: scale(1.03);
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 24px;
+  padding: 44px 0;
+}
+
+/* hero text */
+.hero-content h1,
+.hero-content h2,
+.hero-content h3 {
+  color: #ffffff;
+}
+
+.hero-content p,
+.hero-content div {
+  color: rgba(255,255,255,0.92);
+}
+
+/* small top text like OAHU CAR RENTALS */
+.hero-content > div:first-child {
+  color: rgba(255,255,255,0.85);
+  font-weight: 700;
+}
+
+.hero .request-card label,
+.hero .request-card span {
+  color: var(--text);
+}
+
+.hero .request-card input,
+.hero .request-card select,
+.hero .request-card textarea {
+  background: #ffffff;
+}
+
+/* ===============================
+   Top Navigation
+   =============================== */
+
+.topnav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(255,255,255,0.88);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+}
+
+.topnav-inner {
+  width: min(1100px, 92%);
+  margin: 0 auto;
+  padding: 12px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.topnav-brand {
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.topnav-menu {
+  position: relative;
+}
+
+.menu-button {
+  padding: 8px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.95);
+  border: 1px solid var(--border);
+}
+
+.menu-bar {
+  width: 18px;
+  height: 2px;
+  background: var(--text);
+  border-radius: 2px;
+  display: block;
+}
+
+.menu-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  width: 220px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.15);
+}
+
+.menu-item {
+  display: block;
+  padding: 12px;
+  border-top: 1px solid var(--border);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.menu-item:hover {
+  background: rgba(58,160,255,0.10);
+}
+
+.menu-item-active {
+  background: rgba(58,160,255,0.18);
+  font-weight: 800;
+}
+
+/* ===============================
+   Mobile
+   =============================== */
+
+@media (max-width: 720px) {
+  .grid2,
+  .grid3,
+  .fileGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .intakeWrap {
+    --labelW: 130px;
+  }
+
+  .hero-content {
+    grid-template-columns: 1fr;
+  }
+}
+/* ===============================
+   Gallery
+   =============================== */
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+.gallery-img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.gallery-img:hover {
+  transform: scale(1.02);
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.18);
+}
+/* ===============================
+   FORCE LIGHT TEXT in Hero Request
+   =============================== */
+
+/* All text inside the request card */
+.hero .request-card * {
+  color: rgba(255, 255, 255, 0.96);
+}
+
+/* Keep inputs readable (override the override) */
+.hero .request-card input,
+.hero .request-card select,
+.hero .request-card textarea {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.92);
+}
+
+/* Slider labels (Min / Max / price text) */
+.hero .request-card .range,
+.hero .request-card .range span {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+/* Subtitle under "Request" */
+.hero .request-card > div:first-child {
+  color: rgba(255, 255, 255, 0.98);
+  font-weight: 700;
+}
+
