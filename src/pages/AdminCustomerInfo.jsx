@@ -1,5 +1,5 @@
 // src/pages/AdminCustomerInfo.jsx
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { buttonStyle, inputStyle } from "../components/styles";
 
@@ -623,12 +623,13 @@ export default function AdminCustomerInfo() {
               <div className="grid3">
                 <FieldRow label="DOB" error={touched["d1.dob"] ? errors["d1.dob"] : ""}>
                   <input
+                    type="date"
                     style={inputStyle}
                     className={touched["d1.dob"] && errors["d1.dob"] ? "inputError" : ""}
-                    placeholder="YYYY-MM-DD"
                     value={d1.dob}
                     onBlur={() => markTouched("d1.dob")}
                     onChange={(e) => set1("dob", e.target.value)}
+                    max={new Date().toISOString().split("T")[0]}
                   />
                 </FieldRow>
 
@@ -665,12 +666,13 @@ export default function AdminCustomerInfo() {
               <div className="grid2">
                 <FieldRow label="DL Exp" error={touched["d1.dlExp"] ? errors["d1.dlExp"] : ""}>
                   <input
+                    type="date"
                     style={inputStyle}
                     className={touched["d1.dlExp"] && errors["d1.dlExp"] ? "inputError" : ""}
-                    placeholder="YYYY-MM-DD"
                     value={d1.dlExp}
                     onBlur={() => markTouched("d1.dlExp")}
                     onChange={(e) => set1("dlExp", e.target.value)}
+                    min={new Date().toISOString().split("T")[0]}
                   />
                 </FieldRow>
 
@@ -903,12 +905,13 @@ export default function AdminCustomerInfo() {
                   <div className="grid3">
                     <FieldRow label="DOB" error={touched["d2.dob"] ? errors["d2.dob"] : ""}>
                       <input
+                        type="date"
                         style={inputStyle}
                         className={touched["d2.dob"] && errors["d2.dob"] ? "inputError" : ""}
-                        placeholder="YYYY-MM-DD"
                         value={d2.dob}
                         onBlur={() => markTouched("d2.dob")}
                         onChange={(e) => set2("dob", e.target.value)}
+                        max={new Date().toISOString().split("T")[0]}
                       />
                     </FieldRow>
 
@@ -943,12 +946,13 @@ export default function AdminCustomerInfo() {
                   <div className="grid2">
                     <FieldRow label="DL Exp" error={touched["d2.dlExp"] ? errors["d2.dlExp"] : ""}>
                       <input
+                        type="date"
                         style={inputStyle}
                         className={touched["d2.dlExp"] && errors["d2.dlExp"] ? "inputError" : ""}
-                        placeholder="YYYY-MM-DD"
                         value={d2.dlExp}
                         onBlur={() => markTouched("d2.dlExp")}
                         onChange={(e) => set2("dlExp", e.target.value)}
+                        min={new Date().toISOString().split("T")[0]}
                       />
                     </FieldRow>
                   </div>

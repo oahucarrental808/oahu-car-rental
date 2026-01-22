@@ -1,18 +1,24 @@
 // functions/src/submitRequest.js
 import { onRequest } from "firebase-functions/v2/https";
+import { defineSecret } from "firebase-functions/params";
 import { logger } from "firebase-functions";
 import { randomUUID } from "crypto";
 
 import { publicCors } from "./common/cors.js";
 import { getSheetsClient } from "./common/google.js";
 import { isValidDateString } from "./common/validate.js";
+import { sendEmail } from "./common/email.js";
 
 // ✅ Your sheet info
 const SHEET_ID = "1jTbHW-j-agj00ovF4amuPpPy7ksFAirSoATWLDntR-c";
 const SHEET_TAB = "Incoming Requests";
 
+const ADMIN_EMAIL = defineSecret("ADMIN_EMAIL");
+const SMTP_EMAIL = defineSecret("SMTP_EMAIL");
+const SMTP_PASSWORD = defineSecret("SMTP_PASSWORD");
+
 export const submitRequest = onRequest(
-  { region: "us-central1" },
+  { region: "us-central1", secrets: [ADMIN_EMAIL, SMTP_EMAIL, SMTP_PASSWORD] },
   (req, res) =>
     publicCors(req, res, async () => {
       try {
@@ -73,6 +79,51 @@ export const submitRequest = onRequest(
           insertDataOption: "INSERT_ROWS",
           requestBody: { values },
         });
+
+        // Send email notification to admin
+        const debug = String(process.env.DEBUG_MODE || "").toLowerCase() === "true";
+        if (!debug) {
+          try {
+            const adminEmailAddress = ADMIN_EMAIL.value();
+            if (adminEmailAddress) {
+              const emailBody = [
+                "New rental request received:",
+                "",
+                `Name: ${name}`,
+                `Email: ${email}`,
+                `Start Date: ${startDate}`,
+                `End Date: ${endDate}`,
+                `Car Types: ${carTypes.length > 0 ? carTypes.join(", ") : "Any"}`,
+                `Price Range: $${minPrice} - $${maxPrice}`,
+                notes ? `Notes: ${notes}` : "",
+                "",
+                `Request ID: ${id}`,
+                `Submitted: ${createdAt}`,
+                "",
+                "Please review the request in Google Sheets and create a customer info link if approved.",
+              ]
+                .filter(Boolean) // Remove empty strings
+                .join("\n");
+
+              await sendEmail({
+                to: adminEmailAddress,
+                subject: `New Rental Request: ${name} - ${startDate} to ${endDate}`,
+                text: emailBody,
+              });
+
+              logger.info("New request notification email sent to admin", {
+                adminEmail: adminEmailAddress,
+                requestId: id,
+              });
+            }
+          } catch (emailError) {
+            // Log error but don't fail the request - request was still saved
+            logger.error("Failed to send new request notification email", {
+              error: emailError.message,
+              requestId: id,
+            });
+          }
+        }
 
         return res.status(200).json({ ok: true, id });
       } catch (err) {

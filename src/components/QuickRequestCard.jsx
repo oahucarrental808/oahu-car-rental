@@ -6,7 +6,8 @@ import { buttonStyle, inputStyle, labelStyle, textareaStyle } from "./styles";
 const CAR_TYPE_OPTIONS = [
   { value: "Compact", label: "Compact" },
   { value: "SUV", label: "SUV" },
-  { value: "Van", label: "Van" },
+  { value: "Sedan", label: "Sedan" },
+  { value: "Specific car from gallery", label: "Specific car from gallery" },
   { value: "Any", label: "Any" },
 ];
 
@@ -22,6 +23,8 @@ export default function QuickRequestCard({ title = "Request", subtitle, onSucces
 
   const [minPrice, setMinPrice] = useState(50);
   const [maxPrice, setMaxPrice] = useState(150);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   // Ensure sliders never cross
   const safeMin = useMemo(
@@ -37,15 +40,28 @@ export default function QuickRequestCard({ title = "Request", subtitle, onSucces
     e.preventDefault();
   
     const formEl = e.currentTarget;           // ✅ capture immediately
-    setStatus("sending");
-  
+    
     const form = new FormData(formEl);
+    const formStartDate = form.get("startDate");
+    const formEndDate = form.get("endDate");
+    
+    // Validate dates
+    if (formStartDate && formEndDate) {
+      const start = new Date(formStartDate);
+      const end = new Date(formEndDate);
+      if (end <= start) {
+        setStatus("error");
+        return;
+      }
+    }
+    
+    setStatus("sending");
   
     const payload = {
       name: form.get("name"),
       email: form.get("email"),
-      startDate: form.get("startDate"),
-      endDate: form.get("endDate"),
+      startDate: formStartDate,
+      endDate: formEndDate,
       carTypes: form.getAll("carTypes"),
       minPrice: safeMin,
       maxPrice: safeMax,
@@ -74,6 +90,8 @@ export default function QuickRequestCard({ title = "Request", subtitle, onSucces
   
       setMinPrice(50);
       setMaxPrice(150);
+      setStartDate("");
+      setEndDate("");
   
       // go to landing page
       navigate("/request/success", { state: { fromSubmit: true } });
@@ -106,15 +124,42 @@ export default function QuickRequestCard({ title = "Request", subtitle, onSucces
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
           <label style={labelStyle}>
-            Start date
-            <input name="startDate" type="date" required style={inputStyle} />
+            Start date (Pickup)
+            <input 
+              name="startDate" 
+              type="date" 
+              required 
+              style={inputStyle}
+              value={startDate}
+              onChange={(e) => {
+                setStartDate(e.target.value);
+                if (endDate && e.target.value >= endDate) {
+                  setEndDate("");
+                }
+              }}
+              min={new Date().toISOString().split("T")[0]}
+            />
           </label>
 
           <label style={labelStyle}>
-            End date
-            <input name="endDate" type="date" required style={inputStyle} />
+            End date (Return)
+            <input 
+              name="endDate" 
+              type="date" 
+              required 
+              style={inputStyle}
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              min={startDate || new Date().toISOString().split("T")[0]}
+            />
           </label>
         </div>
+        
+        {status === "error" && startDate && endDate && new Date(endDate) <= new Date(startDate) && (
+          <div style={{ fontSize: "13px", color: "crimson" }}>
+            ❌ End date must be after start date.
+          </div>
+        )}
 
         {/* Car type multi-select */}
         <label style={labelStyle}>
@@ -176,7 +221,7 @@ export default function QuickRequestCard({ title = "Request", subtitle, onSucces
           <textarea
             name="notes"
             rows={3}
-            placeholder="Pickup location? Number of guests? Car seat needed?"
+            placeholder="If you selected 'Specific car from gallery', please specify which car here. Pickup location? Number of guests? Car seat needed?"
             style={textareaStyle}
           />
         </label>

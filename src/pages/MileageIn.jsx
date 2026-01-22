@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
-import { buttonStyle, inputStyle } from "../components/styles";
+import { buttonStyle, inputStyle, textareaStyle } from "../components/styles";
 
 const DEBUG = import.meta.env.VITE_DEBUG_MODE === "true";
 
@@ -17,6 +17,8 @@ export default function MileageIn() {
   const [mileageIn, setMileageIn] = useState("");
   const [fuelIn, setFuelIn] = useState("");
   const [dashboard, setDashboard] = useState(null);
+  const [rating, setRating] = useState(0);
+  const [review, setReview] = useState("");
 
   const [status, setStatus] = useState("idle"); // idle | submitting | done | error
   const [error, setError] = useState("");
@@ -56,6 +58,12 @@ export default function MileageIn() {
       fd.append("mileageIn", mileageIn);
       fd.append("fuelIn", fuelIn);
       fd.append("dashboard", dashboard);
+      if (rating > 0) {
+        fd.append("rating", String(rating));
+      }
+      if (review.trim()) {
+        fd.append("review", review.trim());
+      }
 
       const res = await fetch(`/api/submitMileageIn?t=${encodeURIComponent(token)}`, {
         method: "POST",
@@ -139,7 +147,74 @@ export default function MileageIn() {
               ) : null}
             </div>
           </div>
+        </section>
 
+        <section className="intakeCard" style={{ marginTop: 20 }}>
+          <h2>Leave a Review (Optional)</h2>
+          <div style={{ opacity: 0.9, lineHeight: 1.5, marginBottom: 16 }}>
+            We'd love to hear about your experience! Your feedback helps us improve.
+          </div>
+
+          <div className="fieldRow">
+            <div className="fieldLabel">Rating</div>
+            <div className="fieldControl">
+              <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setRating(star)}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      padding: 0,
+                      fontSize: "28px",
+                      lineHeight: 1,
+                      color: star <= rating ? "#FFD700" : "#ddd",
+                      transition: "color 0.2s",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (rating === 0) {
+                        e.currentTarget.style.color = "#FFD700";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (rating === 0) {
+                        e.currentTarget.style.color = "#ddd";
+                      }
+                    }}
+                  >
+                    ★
+                  </button>
+                ))}
+                {rating > 0 && (
+                  <span style={{ marginLeft: 8, fontSize: 14, opacity: 0.8 }}>
+                    {rating} {rating === 1 ? "star" : "stars"}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="fieldRow" style={{ marginTop: 12 }}>
+            <div className="fieldLabel">Your Review</div>
+            <div className="fieldControl">
+              <textarea
+                style={{ ...textareaStyle, minHeight: "100px" }}
+                value={review}
+                onChange={(e) => setReview(e.target.value)}
+                placeholder="Tell us about your experience..."
+                maxLength={1000}
+              />
+              <div style={{ marginTop: 6, fontSize: 12, opacity: 0.7, textAlign: "right" }}>
+                {review.length}/1000 characters
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="intakeCard" style={{ marginTop: 20 }}>
           {error ? (
             <div className="fieldError" style={{ marginTop: 10 }}>
               {error}

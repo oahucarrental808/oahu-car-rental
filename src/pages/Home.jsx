@@ -1,15 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import QuickRequestCard from "../components/QuickRequestCard";
-import CarCard from "../components/CarCard";
 import { container } from "../components/styles";
 
 import reviews from "../data/reviews.json";
 
 import heroImg from "../assets/hero.jpg";
-import compactImg from "../assets/compact.jpg";
-import suvImg from "../assets/suv.jpg";
-import vanImg from "../assets/van.jpg";
+
 
 export default function Home() {
   const navigate = useNavigate();
@@ -54,6 +51,9 @@ export default function Home() {
           <div>
             <div style={{ fontSize: "14px", letterSpacing: "0.08em", opacity: 0.9 }}>
               OAHU CAR RENTALS
+            </div>
+            <div style={{ fontSize: "12px", opacity: 0.85, marginTop: "4px" }}>
+              Established June 1st, 2020
             </div>
 
             <h1 style={{ fontSize: "44px", lineHeight: 1.1, margin: "10px 0 14px" }}>
@@ -120,24 +120,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* VEHICLE GRID */}
-      <section style={{ ...container, padding: "26px 0 54px" }}>
-        <h2 style={{ fontSize: "22px", marginBottom: "14px" }}>
-          Available rentals
-        </h2>
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-            gap: "14px",
-          }}
-        >
-          <CarCard src={compactImg} title="Compact" subtitle="Easy parking, great MPG" />
-          <CarCard src={suvImg} title="SUV" subtitle="Room for gear and comfort" />
-          <CarCard src={vanImg} title="Van" subtitle="Roomy with seating for the whole family" />
-        </div>
-      </section>
     </>
   );
 }

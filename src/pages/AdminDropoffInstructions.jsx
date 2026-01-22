@@ -1,26 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
 import AdminGate from "../components/AdminGate";
 import { buttonStyle, container, inputStyle, labelStyle, textareaStyle } from "../components/styles";
+import { getTokenFromUrl, formatEmailPreviewText } from "../utils/adminUtils";
 
 const DEBUG = import.meta.env.VITE_DEBUG_MODE === "true";
 
-function mustString(v) {
-  return String(v ?? "").trim();
-}
-
-function getTokenFromUrl() {
-  try {
-    const qs = new URLSearchParams(window.location.search);
-    return mustString(qs.get("t"));
-  } catch {
-    return "";
-  }
-}
+// Default dropoff address - can be overwritten by TJ
+const DEFAULT_DROPOFF_ADDRESS = "123 Main Street, Honolulu, HI 96815";
 
 export default function AdminDropoffInstructions() {
   const [token, setToken] = useState("");
   const [draft, setDraft] = useState(null);
   const [instructions, setInstructions] = useState("");
+  const [address, setAddress] = useState(DEFAULT_DROPOFF_ADDRESS);
   const [status, setStatus] = useState("idle"); // idle | loading | ready | sending | sent | error
   const [error, setError] = useState("");
 
@@ -57,13 +49,10 @@ export default function AdminDropoffInstructions() {
     })();
   }, []);
 
-  const emailPreviewText = useMemo(() => {
-    if (!DEBUG || !debugEmail) return "";
-    const to = debugEmail?.to || "CUSTOMER";
-    const subject = debugEmail?.subject || "Dropoff instructions";
-    const body = debugEmail?.body || "";
-    return [`To: ${to}`, `Subject: ${subject}`, "", body].join("\n");
-  }, [debugEmail]);
+  const emailPreviewText = useMemo(
+    () => formatEmailPreviewText(DEBUG, debugEmail, "Dropoff instructions"),
+    [debugEmail]
+  );
 
   async function onSubmit(e) {
     e.preventDefault();
@@ -78,7 +67,7 @@ export default function AdminDropoffInstructions() {
       const res = await fetch(`/api/createDropoffMileageLink?t=${encodeURIComponent(token)}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ instructions }),
+        body: JSON.stringify({ instructions, address }),
       });
 
       if (!res.ok) throw new Error(await res.text());
@@ -125,6 +114,17 @@ export default function AdminDropoffInstructions() {
         ) : null}
 
         <form onSubmit={onSubmit}>
+          <label style={labelStyle}>
+            Dropoff Address
+            <input
+              style={inputStyle}
+              type="text"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder="Dropoff address"
+            />
+          </label>
+
           <label style={labelStyle}>Dropoff instructions (optional)</label>
           <textarea
             style={textareaStyle}

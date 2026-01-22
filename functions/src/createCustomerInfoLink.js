@@ -3,6 +3,7 @@ import { defineSecret } from "firebase-functions/params";
 import { logger } from "firebase-functions";
 import cors from "cors";
 import crypto from "node:crypto";
+import { sendEmail } from "./common/email.js";
 
 const ADMIN_SECRET = defineSecret("ADMIN_SECRET");
 const LINK_SECRET = defineSecret("LINK_SECRET");
@@ -62,8 +63,11 @@ function encrypt(payloadObj, secret) {
   return `${b64url(iv)}.${b64url(tag)}.${b64url(ciphertext)}`;
 }
 
+const SMTP_EMAIL = defineSecret("SMTP_EMAIL");
+const SMTP_PASSWORD = defineSecret("SMTP_PASSWORD");
+
 export const createCustomerInfoLink = onRequest(
-  { region: "us-central1", secrets: [ADMIN_SECRET, LINK_SECRET] },
+  { region: "us-central1", secrets: [ADMIN_SECRET, LINK_SECRET, SMTP_EMAIL, SMTP_PASSWORD] },
   (req, res) =>
     corsHandler(req, res, async () => {
       try {
@@ -110,6 +114,35 @@ export const createCustomerInfoLink = onRequest(
         const url = `https://oahu-car-rentals.web.app/admin/customer-info?t=${encodeURIComponent(
           token
         )}`;
+
+        // Send email to customer with link
+        const debug = String(process.env.DEBUG_MODE || "").toLowerCase() === "true";
+        if (!debug) {
+          try {
+            await sendEmail({
+              to: draft.customerEmail,
+              subject: "Complete Your Rental Information - Oahu Car Rentals",
+              text: [
+                "Hi,",
+                "",
+                "Please complete your driver and insurance information using the secure link below:",
+                url,
+                "",
+                "This link will expire in 7 days.",
+                "",
+                "— Oahu Car Rentals",
+              ].join("\n"),
+            });
+            logger.info("Customer info link email sent", { email: draft.customerEmail });
+          } catch (emailError) {
+            // Log error but don't fail the request - link was still created
+            logger.error("Failed to send customer info link email", {
+              email: draft.customerEmail,
+              error: emailError.message,
+            });
+          }
+        }
+
         return res.json({ ok: true, url });
       } catch (e) {
         logger.error(e);

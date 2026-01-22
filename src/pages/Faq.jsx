@@ -51,11 +51,11 @@ const claimAnswer = (
 
       <FaqItem
         q="What do I need to rent?"
-        a="A valid driver’s license and a credit/debit card. We’ll confirm details when you request."
+        a="A valid driver's license and proof of valid insurance. We'll confirm details when you request."
       />
       <FaqItem
         q="Can I pick up at the airport?"
-        a="Yes—tell us your preferred pickup location in the request notes."
+        a="Yes—tell us your preferred pickup location in the request notes. Yes, we offer delivery anywhere on Island for an additional fee depending on time of delivery and location."
       />
       <FaqItem
         q="Do you allow same-day requests?"
@@ -65,6 +65,11 @@ const claimAnswer = (
       <FaqItem q="Do you offer referral bonuses?" a={referralText} />
 
       <FaqItem q="Do your vehicles have trackers?" a={trackerText} />
+
+      <FaqItem
+        q="Do you offer beach supply rentals and child seats?"
+        a="Yes we do, depending on availability. We charge a small additional fee."
+      />
 
       <FaqItem q="What is the walk-around form?" a={walkAroundAnswer} />
       <FaqItem q="Where can I find roadside help information?" a={roadsideAnswer} />

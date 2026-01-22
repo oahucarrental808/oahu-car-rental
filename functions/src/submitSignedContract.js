@@ -6,6 +6,7 @@ import { Busboy } from "@fastify/busboy";
 import crypto from "node:crypto";
 import { Readable } from "node:stream";
 import { google } from "googleapis";
+import { sendEmail } from "./common/email.js";
 
 /* ------------------------------------------------------------------ */
 /* Secrets                                                            */
@@ -16,6 +17,9 @@ const OAUTH_CLIENT_ID = defineSecret("OAUTH_CLIENT_ID");
 const OAUTH_CLIENT_SECRET = defineSecret("OAUTH_CLIENT_SECRET");
 const OAUTH_REDIRECT_URI = defineSecret("OAUTH_REDIRECT_URI");
 const DRIVE_REFRESH_TOKEN = defineSecret("DRIVE_REFRESH_TOKEN");
+const SMTP_EMAIL = defineSecret("SMTP_EMAIL");
+const SMTP_PASSWORD = defineSecret("SMTP_PASSWORD");
+const ADMIN_EMAIL = defineSecret("ADMIN_EMAIL");
 
 /* ------------------------------------------------------------------ */
 /* CORS                                                               */
@@ -129,6 +133,9 @@ export const submitSignedContract = onRequest(
       OAUTH_CLIENT_SECRET,
       OAUTH_REDIRECT_URI,
       DRIVE_REFRESH_TOKEN,
+      SMTP_EMAIL,
+      SMTP_PASSWORD,
+      ADMIN_EMAIL,
     ],
   },
   (req, res) =>
@@ -216,11 +223,39 @@ export const submitSignedContract = onRequest(
                 saved?.webViewLink ? `Drive link: ${saved.webViewLink}` : "(Drive link unavailable)",
               ].join("\n"),
             },
-            // TODO (non-debug): email admin confirmation / keep as TODO only
           });
         }
 
-        // TODO (non-debug): email admin confirmation / keep as TODO only
+        // Email admin confirmation (optional - as per TODO comment)
+        try {
+          const adminEmailAddress = ADMIN_EMAIL.value();
+          if (adminEmailAddress) {
+            await sendEmail({
+              to: adminEmailAddress,
+              subject: `Signed Contract Received: ${vin} ${startDate}`,
+              text: [
+                "SIGNED CONTRACT UPLOADED",
+                "",
+                `VIN: ${vin}`,
+                `Start Date: ${startDate}`,
+                `End Date: ${endDate}`,
+                `Customer Email: ${customerEmail || "N/A"}`,
+                "",
+                saved?.webViewLink
+                  ? `Drive Link: ${saved.webViewLink}`
+                  : "(Drive link unavailable)",
+              ].join("\n"),
+            });
+            logger.info("Signed contract confirmation email sent to admin", {
+              adminEmail: adminEmailAddress,
+            });
+          }
+        } catch (emailError) {
+          // Log error but don't fail the request - contract was still uploaded
+          logger.error("Failed to send signed contract confirmation email", {
+            error: emailError.message,
+          });
+        }
 
         return res.json({ ok: true, signedContractLink: saved?.webViewLink || "" });
       } catch (e) {

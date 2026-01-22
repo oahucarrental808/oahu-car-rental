@@ -59,9 +59,18 @@ export default function AdminRequestCustomerInfo() {
     setError("");
     setCreatedLink("");
 
-    try {
-      console.log("VITE_ADMIN_SECRET length:", (import.meta.env.VITE_ADMIN_SECRET || "").length);
+    // Validate dates
+    if (v.startDate && v.endDate) {
+      const start = new Date(v.startDate);
+      const end = new Date(v.endDate);
+      if (end <= start) {
+        setStatus("error");
+        setError("End date must be after start date.");
+        return;
+      }
+    }
 
+    try {
       const payload = {
         ...v,
         costPerDay: formattedCostPerDay, // send in required format "$X/Day"
@@ -124,21 +133,23 @@ export default function AdminRequestCustomerInfo() {
 
           <div style={{ display: "grid", gap: 12, gridTemplateColumns: "1fr 1fr" }}>
             <label>
-              Start Date
+              Start Date (Pickup)
               <input
                 required
                 type="date"
                 value={v.startDate}
                 onChange={(e) => set("startDate", e.target.value)}
+                min={new Date().toISOString().split("T")[0]}
               />
             </label>
             <label>
-              End Date
+              End Date (Return)
               <input
                 required
                 type="date"
                 value={v.endDate}
                 onChange={(e) => set("endDate", e.target.value)}
+                min={v.startDate || new Date().toISOString().split("T")[0]}
               />
             </label>
           </div>

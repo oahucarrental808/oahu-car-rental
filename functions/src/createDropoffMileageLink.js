@@ -3,8 +3,11 @@ import { defineSecret } from "firebase-functions/params";
 import { logger } from "firebase-functions";
 import cors from "cors";
 import crypto from "node:crypto";
+import { sendEmail } from "./common/email.js";
 
 const LINK_SECRET = defineSecret("LINK_SECRET");
+const SMTP_EMAIL = defineSecret("SMTP_EMAIL");
+const SMTP_PASSWORD = defineSecret("SMTP_PASSWORD");
 
 const corsHandler = cors({
   origin: true,
@@ -55,7 +58,7 @@ function encrypt(payloadObj, secret) {
 }
 
 export const createDropoffMileageLink = onRequest(
-  { region: "us-central1", secrets: [LINK_SECRET] },
+  { region: "us-central1", secrets: [LINK_SECRET, SMTP_EMAIL, SMTP_PASSWORD] },
   (req, res) =>
     corsHandler(req, res, async () => {
       try {
@@ -70,7 +73,8 @@ export const createDropoffMileageLink = onRequest(
           return res.status(410).json({ ok: false, error: "Link expired" });
         }
 
-        if (!adminDraft.phase || adminDraft.phase !== "dropoffAdmin") {
+        // Accept both "dropoffAdmin" (legacy) and "admin_dropoff" (new standard)
+        if (!adminDraft.phase || (adminDraft.phase !== "dropoffAdmin" && adminDraft.phase !== "admin_dropoff")) {
           return res.status(400).json({ ok: false, error: "Invalid link" });
         }
 
@@ -121,11 +125,32 @@ export const createDropoffMileageLink = onRequest(
                 "— Oahu Car Rentals",
               ].join("\n"),
             },
-            // TODO (non-debug): send email to customer with mileageInUrl (and dropoff instructions)
           });
         }
 
-        // TODO (non-debug): send email to customer with mileageInUrl (and dropoff instructions)
+        // Send email to customer with mileageInUrl + dropoff instructions
+        try {
+          await sendEmail({
+            to: customerEmail,
+            subject: "Dropoff Instructions + Return Checklist - Oahu Car Rentals",
+            text: [
+              "Dropoff instructions:",
+              instructions || "(none)",
+              "",
+              "When you return the car, please submit final mileage, fuel level, and a dashboard photo using this link:",
+              mileageInUrl,
+              "",
+              "— Oahu Car Rentals",
+            ].join("\n"),
+          });
+          logger.info("Dropoff instructions email sent", { email: customerEmail });
+        } catch (emailError) {
+          // Log error but don't fail the request - link was still created
+          logger.error("Failed to send dropoff instructions email", {
+            email: customerEmail,
+            error: emailError.message,
+          });
+        }
 
         return res.status(200).json({ ok: true, mileageInUrl });
       } catch (e) {

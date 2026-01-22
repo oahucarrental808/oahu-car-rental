@@ -8,6 +8,8 @@ import { Readable } from "node:stream";
 import { google } from "googleapis";
 import { PDFDocument, StandardFonts } from "pdf-lib";
 import { CONTRACT_COORDS } from "./pdfCoordinates.js";
+import { sendEmail } from "./common/email.js";
+import { getSheetsClient } from "./common/google.js";
 
 /* ------------------------------------------------------------------ */
 /* Secrets                                                            */
@@ -18,6 +20,13 @@ const OAUTH_CLIENT_ID = defineSecret("OAUTH_CLIENT_ID");
 const OAUTH_CLIENT_SECRET = defineSecret("OAUTH_CLIENT_SECRET");
 const OAUTH_REDIRECT_URI = defineSecret("OAUTH_REDIRECT_URI");
 const DRIVE_REFRESH_TOKEN = defineSecret("DRIVE_REFRESH_TOKEN");
+const SMTP_EMAIL = defineSecret("SMTP_EMAIL");
+const SMTP_PASSWORD = defineSecret("SMTP_PASSWORD");
+const ADMIN_EMAIL = defineSecret("ADMIN_EMAIL");
+
+// Reviews sheet info
+const REVIEWS_SHEET_ID = "1UIF78MjeT4RAix8oc1xt6DXI_-cM7hO-oQb-lZoeYA";
+const REVIEWS_SHEET_TAB = "Reviews";
 
 /* ------------------------------------------------------------------ */
 /* CORS                                                               */
@@ -194,6 +203,9 @@ export const submitMileageIn = onRequest(
       OAUTH_CLIENT_SECRET,
       OAUTH_REDIRECT_URI,
       DRIVE_REFRESH_TOKEN,
+      SMTP_EMAIL,
+      SMTP_PASSWORD,
+      ADMIN_EMAIL,
     ],
   },
   (req, res) =>
@@ -230,6 +242,8 @@ export const submitMileageIn = onRequest(
         const mileageIn = mustString(fields.mileageIn);
         const fuelIn = mustString(fields.fuelIn);
         const dashboard = files.dashboard;
+        const rating = mustString(fields.rating);
+        const review = mustString(fields.review);
 
         if (!mustIntString(mileageIn)) {
           return res.status(400).json({ ok: false, error: "mileageIn must be integer" });
@@ -346,11 +360,90 @@ export const submitMileageIn = onRequest(
                 "CONTRACT_COMPLETED.pdf has been generated (if CONTRACT.pdf existed).",
               ].join("\n"),
             },
-            // TODO (non-debug): email admin + start scheduler
           });
         }
 
-        // TODO (non-debug): email admin + start scheduler
+        // Save review to Google Sheets if provided
+        if (rating || review) {
+          try {
+            const sheets = getSheetsClient();
+            const reviewRating = rating ? Number(rating) : null;
+            
+            // Validate rating if provided
+            if (reviewRating !== null && (reviewRating < 1 || reviewRating > 5)) {
+              logger.warn("Invalid rating value, skipping review save", { rating: reviewRating });
+            } else {
+              const reviewValues = [[
+                new Date().toISOString(),
+                vin,
+                startDate,
+                endDate || "",
+                customerEmail,
+                reviewRating || "",
+                review || "",
+              ]];
+
+              await sheets.spreadsheets.values.append({
+                spreadsheetId: REVIEWS_SHEET_ID,
+                range: `${REVIEWS_SHEET_TAB}!A1`,
+                valueInputOption: "USER_ENTERED",
+                insertDataOption: "INSERT_ROWS",
+                requestBody: { values: reviewValues },
+              });
+
+              logger.info("Review saved to Google Sheets", {
+                vin,
+                rating: reviewRating,
+                hasReview: !!review,
+              });
+            }
+          } catch (reviewError) {
+            // Log error but don't fail the request - mileage was still recorded
+            logger.error("Failed to save review to Google Sheets", {
+              error: reviewError.message,
+              vin,
+            });
+          }
+        }
+
+        // Email admin about rental completion
+        try {
+          const adminEmailAddress = ADMIN_EMAIL.value();
+          if (adminEmailAddress) {
+            await sendEmail({
+              to: adminEmailAddress,
+              subject: `Rental Completed: ${vin} ${startDate}`,
+              text: [
+                "RENTAL COMPLETED",
+                "",
+                `VIN: ${vin}`,
+                `Start Date: ${startDate}`,
+                `End Date: ${endDate || ""}`,
+                `Customer Email: ${customerEmail}`,
+                "",
+                "Mileage & Fuel:",
+                `  OUT - Mileage: ${nextMileageJson?.mileage?.out ?? "N/A"}, Fuel: ${nextMileageJson?.fuel?.out ?? "N/A"}`,
+                `  IN  - Mileage: ${nextMileageJson?.mileage?.in ?? "N/A"}, Fuel: ${nextMileageJson?.fuel?.in ?? "N/A"}`,
+                "",
+                "CONTRACT_COMPLETED.pdf has been generated (if CONTRACT.pdf existed).",
+                "",
+                rating || review
+                  ? `Review: ${rating ? `${rating} stars` : ""}${rating && review ? " - " : ""}${review || ""}`
+                  : "",
+                "",
+                `Drive Folder: ${folderId}`,
+              ]
+                .filter(Boolean)
+                .join("\n"),
+            });
+            logger.info("Rental completion email sent to admin", { adminEmail: adminEmailAddress });
+          }
+        } catch (emailError) {
+          // Log error but don't fail the request - mileage was still recorded
+          logger.error("Failed to send rental completion email to admin", {
+            error: emailError.message,
+          });
+        }
 
         return res.json({ ok: true });
       } catch (e) {

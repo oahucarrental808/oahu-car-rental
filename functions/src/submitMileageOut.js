@@ -6,6 +6,7 @@ import { Busboy } from "@fastify/busboy";
 import crypto from "node:crypto";
 import { Readable } from "node:stream";
 import { google } from "googleapis";
+import { sendEmail } from "./common/email.js";
 
 /* ------------------------------------------------------------------ */
 /* Secrets                                                            */
@@ -16,6 +17,8 @@ const OAUTH_CLIENT_ID = defineSecret("OAUTH_CLIENT_ID");
 const OAUTH_CLIENT_SECRET = defineSecret("OAUTH_CLIENT_SECRET");
 const OAUTH_REDIRECT_URI = defineSecret("OAUTH_REDIRECT_URI");
 const DRIVE_REFRESH_TOKEN = defineSecret("DRIVE_REFRESH_TOKEN");
+const SMTP_EMAIL = defineSecret("SMTP_EMAIL");
+const SMTP_PASSWORD = defineSecret("SMTP_PASSWORD");
 
 /* ------------------------------------------------------------------ */
 /* CORS                                                               */
@@ -168,6 +171,8 @@ export const submitMileageOut = onRequest(
       OAUTH_CLIENT_SECRET,
       OAUTH_REDIRECT_URI,
       DRIVE_REFRESH_TOKEN,
+      SMTP_EMAIL,
+      SMTP_PASSWORD,
     ],
   },
   (req, res) =>
@@ -264,11 +269,38 @@ export const submitMileageOut = onRequest(
             ok: true,
             message:
               "Mileage Out submitted. (Return link is generated from the admin dropoff instructions page.)",
-            // TODO (non-debug): email customer next-step instructions
           });
         }
 
-        // TODO (non-debug): email customer next-step instructions
+        // Email customer next-step instructions
+        try {
+          await sendEmail({
+            to: customerEmail,
+            subject: "Pickup Complete - Next Steps - Oahu Car Rentals",
+            text: [
+              "Thank you for submitting your pickup mileage and fuel information.",
+              "",
+              "Your rental is now active. Please remember:",
+              "",
+              "• Drive safely and follow all traffic laws",
+              "• Keep the vehicle in good condition",
+              "• Return the vehicle on or before the end date: " + endDate,
+              "",
+              "When it's time to return the vehicle, you'll receive dropoff instructions with a link to submit your final mileage and fuel level.",
+              "",
+              "If you have any questions, please contact us.",
+              "",
+              "— Oahu Car Rentals",
+            ].join("\n"),
+          });
+          logger.info("Mileage out confirmation email sent", { email: customerEmail });
+        } catch (emailError) {
+          // Log error but don't fail the request - mileage was still recorded
+          logger.error("Failed to send mileage out confirmation email", {
+            email: customerEmail,
+            error: emailError.message,
+          });
+        }
 
         return res.json({ ok: true });
       } catch (e) {

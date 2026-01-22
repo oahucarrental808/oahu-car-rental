@@ -3,8 +3,11 @@ import { defineSecret } from "firebase-functions/params";
 import { logger } from "firebase-functions";
 import cors from "cors";
 import crypto from "node:crypto";
+import { sendEmail } from "./common/email.js";
 
 const LINK_SECRET = defineSecret("LINK_SECRET");
+const SMTP_EMAIL = defineSecret("SMTP_EMAIL");
+const SMTP_PASSWORD = defineSecret("SMTP_PASSWORD");
 
 const corsHandler = cors({
   origin: true,
@@ -59,7 +62,7 @@ function mustString(v) {
 }
 
 export const createPickupMileageLink = onRequest(
-  { region: "us-central1", secrets: [LINK_SECRET] },
+  { region: "us-central1", secrets: [LINK_SECRET, SMTP_EMAIL, SMTP_PASSWORD] },
   (req, res) =>
     corsHandler(req, res, async () => {
       try {
@@ -75,7 +78,8 @@ export const createPickupMileageLink = onRequest(
           return res.status(410).json({ ok: false, error: "Link expired" });
         }
 
-        if (adminDraft.phase !== "pickupAdmin") {
+        // Accept both "pickupAdmin" (legacy) and "admin_pickup" (new standard)
+        if (adminDraft.phase !== "pickupAdmin" && adminDraft.phase !== "admin_pickup") {
           return res.status(400).json({ ok: false, error: "Invalid link" });
         }
 
@@ -88,6 +92,7 @@ export const createPickupMileageLink = onRequest(
           return res.status(400).json({ ok: false, error: "Invalid link" });
         }
 
+        const address = mustString(req.body?.address || "");
         const instructions = mustString(req.body?.instructions || "");
 
         const nowIso = new Date().toISOString();
@@ -113,28 +118,63 @@ export const createPickupMileageLink = onRequest(
 
         const debug = String(process.env.DEBUG_MODE || "").toLowerCase() === "true";
 
+        // Build email content with all pickup information
+        const emailLines = [
+          "Thanks for renting with Oahu Car Rentals.",
+          "",
+          "PICKUP INFORMATION:",
+          "",
+        ];
+
+        if (address) {
+          emailLines.push(`Pickup Address: ${address}`);
+          emailLines.push("");
+        }
+
+        if (instructions) {
+          emailLines.push("Pickup Instructions:");
+          emailLines.push(instructions);
+          emailLines.push("");
+        }
+
+        emailLines.push(
+          "BEFORE YOU DRIVE OFF:",
+          "",
+          "Please submit your pickup mileage, fuel level, and a dashboard photo using this link:",
+          mileageOutUrl,
+          "",
+          "— Oahu Car Rentals"
+        );
+
+        const emailBody = emailLines.join("\n");
+
         if (debug) {
           return res.json({
             ok: true,
             mileageOutUrl,
             debugEmail: {
               to: customerEmail,
-              subject: "Pickup instructions + mileage",
-              body: [
-                "Pickup instructions:",
-                instructions || "(no instructions provided)",
-                "",
-                "Before you drive off, please submit mileage, fuel level, and a dashboard photo using this link:",
-                mileageOutUrl,
-                "",
-                "— Oahu Car Rentals",
-              ].join("\n"),
+              subject: "Pickup Instructions - Oahu Car Rentals",
+              body: emailBody,
             },
-            // TODO (non-debug): send email to customer with instructions + mileageOutUrl
           });
         }
 
-        // TODO (non-debug): send email to customer with instructions + mileageOutUrl
+        // Send email to customer with all pickup information + mileageOutUrl
+        try {
+          await sendEmail({
+            to: customerEmail,
+            subject: "Pickup Instructions - Oahu Car Rentals",
+            text: emailBody,
+          });
+          logger.info("Pickup instructions email sent", { email: customerEmail });
+        } catch (emailError) {
+          // Log error but don't fail the request - link was still created
+          logger.error("Failed to send pickup instructions email", {
+            email: customerEmail,
+            error: emailError.message,
+          });
+        }
         return res.json({ ok: true, mileageOutUrl });
       } catch (e) {
         logger.error(e);

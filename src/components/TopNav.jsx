@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
+import suvImg from "../assets/suv.jpg";
 
 export default function TopNav() {
   const [open, setOpen] = useState(false);
@@ -20,9 +21,22 @@ export default function TopNav() {
   return (
     <div className="topnav">
       <div className="topnav-inner">
-        <Link to="/" className="topnav-brand">
-          Oahu Car Rentals
-        </Link>
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          <Link to="/" className="topnav-brand">
+            Oahu Car Rentals
+          </Link>
+          <img 
+            src={suvImg} 
+            alt="Jeep" 
+            style={{ 
+              width: "120px", 
+              height: "auto", 
+              borderRadius: "8px",
+              border: "1px solid var(--border)",
+              display: "block"
+            }} 
+          />
+        </div>
 
         <div className="topnav-right">
           <div ref={menuRef} className="topnav-menu">
@@ -37,6 +51,7 @@ export default function TopNav() {
               <span className="menu-bar" />
               <span className="menu-bar" />
               <span className="menu-bar" />
+              <span className="menu-text">Menu</span>
             </button>
 
             {open && (

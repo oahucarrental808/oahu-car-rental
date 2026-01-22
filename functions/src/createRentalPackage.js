@@ -11,6 +11,7 @@ import { google } from "googleapis";
 import { adminCors } from "./common/cors.js";
 import { mustString, isValidDateString } from "./common/validate.js";
 import { CONTRACT_COORDS } from "./pdfCoordinates.js";
+import { sendEmail } from "./common/email.js";
 
 /* ------------------------------------------------------------------ */
 /* Secrets                                                            */
@@ -22,6 +23,8 @@ const OAUTH_CLIENT_ID = defineSecret("OAUTH_CLIENT_ID");
 const OAUTH_CLIENT_SECRET = defineSecret("OAUTH_CLIENT_SECRET");
 const OAUTH_REDIRECT_URI = defineSecret("OAUTH_REDIRECT_URI");
 const DRIVE_REFRESH_TOKEN = defineSecret("DRIVE_REFRESH_TOKEN");
+const SMTP_EMAIL = defineSecret("SMTP_EMAIL");
+const SMTP_PASSWORD = defineSecret("SMTP_PASSWORD");
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                            */
@@ -241,6 +244,8 @@ export const createRentalPackage = onRequest(
       OAUTH_CLIENT_SECRET,
       OAUTH_REDIRECT_URI,
       DRIVE_REFRESH_TOKEN,
+      SMTP_EMAIL,
+      SMTP_PASSWORD,
     ],
   },
   (req, res) =>
@@ -465,26 +470,7 @@ export const createRentalPackage = onRequest(
         const createdAt = new Date().toISOString();
         const exp = Date.now() + 7 * 24 * 60 * 60 * 1000;
 
-        // Create MileageOut link (pickup step)
-        const mileageOutToken = encryptToken(
-          {
-            vin,
-            startDate,
-            endDate,
-            customerEmail,
-            folderId: folder.id,
-            phase: "out",
-            createdAt,
-            exp,
-          },
-          LINK_SECRET.value()
-        );
-
-        const mileageOutUrl = `https://oahu-car-rentals.web.app/mileageOut?t=${encodeURIComponent(
-          mileageOutToken
-        )}`;
-
-        // ✅ NEW: Create Signed Contract Upload link
+        // ✅ Create Signed Contract Upload link
         const signedContractToken = encryptToken(
           {
             vin,
@@ -503,6 +489,46 @@ export const createRentalPackage = onRequest(
           signedContractToken
         )}`;
 
+        // ✅ Create Admin Pickup Instructions link
+        // This link will be sent to admin via Pub/Sub 3 days before checkin
+        const adminPickupToken = encryptToken(
+          {
+            vin,
+            startDate,
+            endDate,
+            customerEmail,
+            folderId: folder.id,
+            phase: "admin_pickup",
+            createdAt,
+            exp: Date.now() + 30 * 24 * 60 * 60 * 1000, // 30 days expiration for admin links
+          },
+          LINK_SECRET.value()
+        );
+
+        const adminPickupInstructionsUrl = `https://oahu-car-rentals.web.app/admin/pickup-instructions?t=${encodeURIComponent(
+          adminPickupToken
+        )}`;
+
+        // ✅ Create Admin Dropoff Instructions link
+        // This link will be sent to admin via Pub/Sub 1 day before checkout
+        const adminDropoffToken = encryptToken(
+          {
+            vin,
+            startDate,
+            endDate,
+            customerEmail,
+            folderId: folder.id,
+            phase: "admin_dropoff",
+            createdAt,
+            exp: Date.now() + 30 * 24 * 60 * 60 * 1000, // 30 days expiration for admin links
+          },
+          LINK_SECRET.value()
+        );
+
+        const adminDropoffInstructionsUrl = `https://oahu-car-rentals.web.app/admin/dropoff-instructions?t=${encodeURIComponent(
+          adminDropoffToken
+        )}`;
+
         const debug = String(process.env.DEBUG_MODE || "").toLowerCase() === "true";
 
         if (debug) {
@@ -510,20 +536,9 @@ export const createRentalPackage = onRequest(
             ok: true,
             folderLink: folder.webViewLink,
             contractLink: contract.webViewLink,
-            mileageOutUrl,
             signedContractUrl,
-            debugEmail: {
-              to: customerEmail,
-              subject: "Pickup checklist: mileage + fuel",
-              body: [
-                "Thanks for renting with Oahu Car Rentals.",
-                "",
-                "Before you drive off, please submit mileage, fuel level, and a dashboard photo using this link:",
-                mileageOutUrl,
-                "",
-                "— Oahu Car Rentals",
-              ].join("\n"),
-            },
+            pickupInstructionsUrl: adminPickupInstructionsUrl,
+            dropoffInstructionsUrl: adminDropoffInstructionsUrl,
             debugSignedContractEmail: {
               to: customerEmail,
               subject: "Upload signed contract",
@@ -536,18 +551,41 @@ export const createRentalPackage = onRequest(
                 "— Oahu Car Rentals",
               ].join("\n"),
             },
-            // TODO (non-debug): send email(s) to customer with mileageOutUrl + signedContractUrl and start scheduler
           });
         }
 
-        // TODO (non-debug): send email(s) to customer with mileageOutUrl + signedContractUrl and start scheduler
+        // Send email to customer with signed contract link
+        // Note: Mileage out link will be sent separately when admin sets pickup instructions
+        try {
+          await sendEmail({
+            to: customerEmail,
+            subject: "Upload Signed Contract - Oahu Car Rentals",
+            text: [
+              "Thanks for renting with Oahu Car Rentals.",
+              "",
+              "Please upload a signed copy of your contract using this secure link:",
+              signedContractUrl,
+              "",
+              "— Oahu Car Rentals",
+            ].join("\n"),
+          });
+
+          logger.info("Rental package email sent", { email: customerEmail });
+        } catch (emailError) {
+          // Log error but don't fail the request - package was still created
+          logger.error("Failed to send rental package email", {
+            email: customerEmail,
+            error: emailError.message,
+          });
+        }
 
         return res.status(200).json({
           ok: true,
           folderLink: folder.webViewLink,
           contractLink: contract.webViewLink,
-          mileageOutUrl,
           signedContractUrl,
+          pickupInstructionsUrl: adminPickupInstructionsUrl,
+          dropoffInstructionsUrl: adminDropoffInstructionsUrl,
         });
       } catch (e) {
         logger.error("createRentalPackage failed", e);
