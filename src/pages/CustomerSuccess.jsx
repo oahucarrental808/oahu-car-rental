@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { useProperties } from "../utils/useProperties";
 
 const DEBUG = import.meta.env.VITE_DEBUG_MODE === "true";
 
 export default function CustomerSuccess() {
+  const [properties] = useProperties();
   const [mileageOutUrl, setMileageOutUrl] = useState("");
   const [signedContractUrl, setSignedContractUrl] = useState("");
   const [debugEmail, setDebugEmail] = useState(null);
@@ -71,11 +73,13 @@ export default function CustomerSuccess() {
         textAlign: "center",
       }}
     >
-      <h1 style={{ fontSize: "1.8rem", marginBottom: 16 }}>Thank you!</h1>
+      <h1 style={{ fontSize: "1.8rem", marginBottom: 16 }}>
+        {properties?.customerSuccess?.title || "Thank you!"}
+      </h1>
       <p style={{ marginBottom: 24 }}>
-        Your information has been submitted successfully.
+        {properties?.customerSuccess?.message || "Your information has been submitted successfully."}
         <br />
-        If you need to correct or update anything, please contact us.
+        {properties?.customerSuccess?.contactMessage || "If you need to correct or update anything, please contact us."}
       </p>
 
       {DEBUG && mileageOutUrl ? (
@@ -90,7 +94,9 @@ export default function CustomerSuccess() {
             background: "rgba(255,255,255,0.85)",
           }}
         >
-          <div style={{ fontWeight: 900, marginBottom: 8 }}>Debug: Mileage Out Link</div>
+          <div style={{ fontWeight: 900, marginBottom: 8 }}>
+            {properties?.customerSuccess?.debug?.mileageOutLink || "Debug: Mileage Out Link"}
+          </div>
           <input
             readOnly
             value={mileageOutUrl}
@@ -98,13 +104,15 @@ export default function CustomerSuccess() {
           />
           <div style={{ marginTop: 10 }}>
             <a className="button" href={mileageOutUrl}>
-              Open Mileage Out
+              {properties?.customerSuccess?.debug?.openMileageOut || "Open Mileage Out"}
             </a>
           </div>
 
           {debugEmailText ? (
             <div style={{ marginTop: 14 }}>
-              <div style={{ fontWeight: 900, marginBottom: 8 }}>Debug Email Preview</div>
+              <div style={{ fontWeight: 900, marginBottom: 8 }}>
+                {properties?.admin?.common?.debugEmailPreview || "Debug Email Preview"}
+              </div>
               <pre
                 style={{
                   margin: 0,
@@ -135,7 +143,9 @@ export default function CustomerSuccess() {
             background: "rgba(255,255,255,0.85)",
           }}
         >
-          <div style={{ fontWeight: 900, marginBottom: 8 }}>Debug: Signed Contract Upload Link</div>
+          <div style={{ fontWeight: 900, marginBottom: 8 }}>
+            {properties?.customerSuccess?.debug?.signedContractLink || "Debug: Signed Contract Upload Link"}
+          </div>
           <input
             readOnly
             value={signedContractUrl}
@@ -143,13 +153,15 @@ export default function CustomerSuccess() {
           />
           <div style={{ marginTop: 10 }}>
             <a className="button" href={signedContractUrl}>
-              Upload Signed Contract
+              {properties?.customerSuccess?.debug?.uploadSignedContract || "Upload Signed Contract"}
             </a>
           </div>
 
           {debugSignedEmailText ? (
             <div style={{ marginTop: 14 }}>
-              <div style={{ fontWeight: 900, marginBottom: 8 }}>Debug Email Preview</div>
+              <div style={{ fontWeight: 900, marginBottom: 8 }}>
+                {properties?.admin?.common?.debugEmailPreview || "Debug Email Preview"}
+              </div>
               <pre
                 style={{
                   margin: 0,
@@ -169,7 +181,7 @@ export default function CustomerSuccess() {
       ) : null}
 
       <Link to="/" className="button">
-        Back to Home
+        {properties?.customerSuccess?.backToHome || properties?.common?.buttons?.backToHome || "Back to Home"}
       </Link>
     </div>
   );

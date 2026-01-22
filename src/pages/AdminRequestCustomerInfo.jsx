@@ -1,6 +1,7 @@
 // src/pages/AdminRequestCustomerInfo.jsx
 import { useMemo, useState } from "react";
 import AdminGate from "../components/AdminGate";
+import { useProperties } from "../utils/useProperties";
 
 const DEBUG = import.meta.env.VITE_DEBUG_MODE === "true";
 
@@ -15,6 +16,7 @@ function formatCostPerDay(intStr) {
 }
 
 export default function AdminRequestCustomerInfo() {
+  const [properties] = useProperties();
   const [v, setV] = useState({
     vin: "",
     color: "",
@@ -65,7 +67,7 @@ export default function AdminRequestCustomerInfo() {
       const end = new Date(v.endDate);
       if (end <= start) {
         setStatus("error");
-        setError("End date must be after start date.");
+        setError(properties?.admin?.pages?.requestCustomerInfo?.messages?.endDateError || "End date must be after start date.");
         return;
       }
     }
@@ -96,44 +98,46 @@ export default function AdminRequestCustomerInfo() {
     } catch (err) {
       console.error(err);
       setStatus("error");
-      setError(err?.message || "Failed to create link.");
+      setError(err?.message || properties?.admin?.pages?.requestCustomerInfo?.messages?.failed || "Failed to create link.");
     }
   }
 
   return (
-    <AdminGate title="Admin: Request Customer Info">
+    <AdminGate title={properties?.admin?.titles?.requestCustomerInfo || "Admin: Request Customer Info"}>
       <div style={{ maxWidth: 820, margin: "0 auto", padding: 24 }}>
-        <h1>Request Customer Info</h1>
+        <h1>
+          {properties?.admin?.pages?.requestCustomerInfo?.title || "Request Customer Info"}
+        </h1>
 
         <form onSubmit={onSubmit} style={{ display: "grid", gap: 12 }}>
           <label>
-            VIN
+            {properties?.admin?.pages?.requestCustomerInfo?.labels?.vin || "VIN"}
             <input required value={v.vin} onChange={(e) => set("vin", e.target.value)} />
           </label>
 
           <div style={{ display: "grid", gap: 12, gridTemplateColumns: "1fr 1fr 1fr" }}>
             <label>
-              Make
+              {properties?.admin?.pages?.requestCustomerInfo?.labels?.make || "Make"}
               <input required value={v.make} onChange={(e) => set("make", e.target.value)} />
             </label>
             <label>
-              Color
+              {properties?.admin?.pages?.requestCustomerInfo?.labels?.color || "Color"}
               <input required value={v.color} onChange={(e) => set("color", e.target.value)} />
             </label>
             <label>
-              Model
+              {properties?.admin?.pages?.requestCustomerInfo?.labels?.model || "Model"}
               <input required value={v.model} onChange={(e) => set("model", e.target.value)} />
             </label>
           </div>
 
           <label>
-            License Plate
+            {properties?.admin?.pages?.requestCustomerInfo?.labels?.licensePlate || "License Plate"}
             <input value={v.licensePlate} onChange={(e) => set("licensePlate", e.target.value)} />
           </label>
 
           <div style={{ display: "grid", gap: 12, gridTemplateColumns: "1fr 1fr" }}>
             <label>
-              Start Date (Pickup)
+              {properties?.admin?.pages?.requestCustomerInfo?.labels?.startDate || "Start Date (Pickup)"}
               <input
                 required
                 type="date"
@@ -143,7 +147,7 @@ export default function AdminRequestCustomerInfo() {
               />
             </label>
             <label>
-              End Date (Return)
+              {properties?.admin?.pages?.requestCustomerInfo?.labels?.endDate || "End Date (Return)"}
               <input
                 required
                 type="date"
@@ -156,7 +160,7 @@ export default function AdminRequestCustomerInfo() {
 
           <div style={{ display: "grid", gap: 12, gridTemplateColumns: "1fr 1fr" }}>
             <label>
-              Customer Email
+              {properties?.admin?.pages?.requestCustomerInfo?.labels?.customerEmail || "Customer Email"}
               <input
                 required
                 type="email"
@@ -166,22 +170,24 @@ export default function AdminRequestCustomerInfo() {
             </label>
 
             <label>
-              Cost Per Day (integer)
+              {properties?.admin?.pages?.requestCustomerInfo?.labels?.costPerDay || "Cost Per Day (integer)"}
               <input
                 required
                 inputMode="numeric"
                 value={v.costPerDay}
                 onChange={(e) => set("costPerDay", onlyInt(e.target.value))}
-                placeholder="e.g. 85"
+                placeholder={properties?.admin?.pages?.requestCustomerInfo?.placeholders?.costPerDay || "e.g. 85"}
               />
               <div style={{ fontSize: 12, opacity: 0.75, marginTop: 4 }}>
-                Will be saved as <strong>{formattedCostPerDay || "$X/Day"}</strong>
+                {properties?.admin?.pages?.requestCustomerInfo?.messages?.willBeSaved || "Will be saved as"} <strong>{formattedCostPerDay || "$X/Day"}</strong>
               </div>
             </label>
           </div>
 
           <button type="submit" disabled={status === "creating"}>
-            {status === "creating" ? "Creating..." : "Create Customer Info Link"}
+            {status === "creating" 
+              ? (properties?.admin?.pages?.requestCustomerInfo?.buttons?.creating || properties?.common?.buttons?.creating || "Creating...")
+              : (properties?.admin?.pages?.requestCustomerInfo?.buttons?.create || "Create Customer Info Link")}
           </button>
 
           {status === "error" && error ? (
@@ -191,12 +197,12 @@ export default function AdminRequestCustomerInfo() {
 
         {createdLink && (
           <div style={{ marginTop: 16 }}>
-            <strong>✅ Link created</strong>
+            <strong>✅ {properties?.admin?.pages?.requestCustomerInfo?.messages?.linkCreated || "Link created"}</strong>
             <input readOnly value={createdLink} style={{ width: "100%", marginTop: 8 }} />
 
             {DEBUG && debugEmailPreview ? (
               <div style={{ marginTop: 12 }}>
-                <strong>Debug Email Preview</strong>
+                <strong>{properties?.admin?.common?.debugEmailPreview || "Debug Email Preview"}</strong>
                 <pre
                   style={{
                     marginTop: 8,

@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { buttonStyle, inputStyle } from "../components/styles";
+import { useProperties } from "../utils/useProperties";
 
 const DEBUG = import.meta.env.VITE_DEBUG_MODE === "true";
 
@@ -11,6 +12,7 @@ function onlyInt(value) {
 }
 
 export default function MileageOut() {
+  const [properties] = useProperties();
   const [params] = useSearchParams();
   const token = params.get("t") || "";
 
@@ -33,19 +35,19 @@ export default function MileageOut() {
     setResult(null);
 
     if (!token) {
-      setError("Missing token.");
+      setError(properties?.mileageOut?.messages?.missingToken || properties?.common?.messages?.missingToken || "Missing token.");
       return;
     }
     if (!mileageOut) {
-      setError("Mileage is required.");
+      setError(properties?.mileageOut?.messages?.mileageRequired || "Mileage is required.");
       return;
     }
     if (!fuelOut) {
-      setError("Fuel level is required.");
+      setError(properties?.mileageOut?.messages?.fuelRequired || "Fuel level is required.");
       return;
     }
     if (!dashboard) {
-      setError("Dashboard photo is required.");
+      setError(properties?.mileageOut?.messages?.dashboardRequired || "Dashboard photo is required.");
       return;
     }
 
@@ -70,7 +72,7 @@ export default function MileageOut() {
     } catch (err) {
       console.error(err);
       setStatus("error");
-      setError(err?.message || "Failed to submit.");
+      setError(err?.message || properties?.mileageOut?.messages?.failed || properties?.common?.messages?.failed || "Failed to submit.");
     }
   }
 
@@ -84,38 +86,43 @@ export default function MileageOut() {
 
   return (
     <div className="intakeWrap">
-      <h1 className="intakeHeader">Mileage & Fuel (Pickup)</h1>
+      <h1 className="intakeHeader">
+        {properties?.mileageOut?.title || "Mileage & Fuel (Pickup)"}
+      </h1>
 
       <div className="intakeCard">
         <div style={{ opacity: 0.9, lineHeight: 1.5 }}>
-          Please enter the current mileage and fuel level at pickup, and upload a clear photo of the
-          dashboard showing both.
+          {properties?.mileageOut?.instructions || "Please enter the current mileage and fuel level at pickup, and upload a clear photo of the dashboard showing both."}
         </div>
       </div>
 
       <form className="intakeForm" onSubmit={onSubmit}>
         <section className="intakeCard">
-          <h2>Pickup Details</h2>
+          <h2>{properties?.mileageOut?.sectionTitle || "Pickup Details"}</h2>
 
           <div className="grid2">
             <div className="fieldRow">
-              <div className="fieldLabel">Mileage (integer)</div>
+              <div className="fieldLabel">
+                {properties?.mileageOut?.labels?.mileage || "Mileage (integer)"}
+              </div>
               <div className="fieldControl">
                 <input
                   style={inputStyle}
                   inputMode="numeric"
                   value={mileageOut}
                   onChange={(e) => setMileageOut(onlyInt(e.target.value))}
-                  placeholder="e.g. 58231"
+                  placeholder={properties?.mileageOut?.placeholders?.mileage || "e.g. 58231"}
                 />
               </div>
             </div>
 
             <div className="fieldRow">
-              <div className="fieldLabel">Fuel Level</div>
+              <div className="fieldLabel">
+                {properties?.mileageOut?.labels?.fuelLevel || "Fuel Level"}
+              </div>
               <div className="fieldControl">
                 <select style={inputStyle} value={fuelOut} onChange={(e) => setFuelOut(e.target.value)}>
-                  <option value="">Select…</option>
+                  <option value="">{properties?.mileageOut?.placeholders?.select || "Select…"}</option>
                   {FUEL_OPTIONS.map((x) => (
                     <option key={x} value={x}>
                       {x}
@@ -127,7 +134,9 @@ export default function MileageOut() {
           </div>
 
           <div className="fieldRow" style={{ marginTop: 12 }}>
-            <div className="fieldLabel">Dashboard Photo</div>
+            <div className="fieldLabel">
+              {properties?.mileageOut?.labels?.dashboardPhoto || "Dashboard Photo"}
+            </div>
             <div className="fieldControl">
               <input
                 type="file"
@@ -152,7 +161,9 @@ export default function MileageOut() {
               style={{ ...buttonStyle, width: "100%", display: "block" }}
               disabled={status === "submitting"}
             >
-              {status === "submitting" ? "Submitting..." : "Submit Pickup Info"}
+              {status === "submitting" 
+                ? (properties?.mileageOut?.buttons?.submitting || properties?.common?.buttons?.submitting || "Submitting...")
+                : (properties?.mileageOut?.buttons?.submit || "Submit Pickup Info")}
             </button>
           </div>
         </section>
@@ -163,7 +174,9 @@ export default function MileageOut() {
 
             {DEBUG && result?.mileageInUrl ? (
               <>
-                <div style={{ fontWeight: 800, marginBottom: 8 }}>Debug: Mileage In Link</div>
+                <div style={{ fontWeight: 800, marginBottom: 8 }}>
+                  {properties?.mileageOut?.debug?.mileageInLink || "Debug: Mileage In Link"}
+                </div>
                 <input
                   readOnly
                   value={result.mileageInUrl}
@@ -176,16 +189,18 @@ export default function MileageOut() {
                 />
                 <div style={{ marginTop: 10, display: "flex", gap: 10, flexWrap: "wrap" }}>
                   <a className="button" href={result.mileageInUrl}>
-                    Open Mileage In
+                    {properties?.mileageOut?.debug?.openMileageIn || "Open Mileage In"}
                   </a>
                   <Link className="button button-secondary" to="/">
-                    Back to Home
+                    {properties?.common?.buttons?.backToHome || "Back to Home"}
                   </Link>
                 </div>
 
                 {debugEmailText ? (
                   <div style={{ marginTop: 14 }}>
-                    <div style={{ fontWeight: 900, marginBottom: 8 }}>Debug Email Preview</div>
+                    <div style={{ fontWeight: 900, marginBottom: 8 }}>
+                      {properties?.admin?.common?.debugEmailPreview || "Debug Email Preview"}
+                    </div>
                     <pre
                       style={{
                         margin: 0,
@@ -204,9 +219,9 @@ export default function MileageOut() {
               </>
             ) : (
               <div style={{ opacity: 0.9, lineHeight: 1.5 }}>
-                Thanks! Your pickup mileage and fuel have been recorded.
+                {properties?.mileageOut?.messages?.submitted || "Thanks! Your pickup mileage and fuel have been recorded."}
                 <br />
-                You can close this page.
+                {properties?.mileageOut?.messages?.closePage || "You can close this page."}
               </div>
             )}
           </section>

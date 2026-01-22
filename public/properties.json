@@ -1,0 +1,416 @@
+{
+  "brand": {
+    "name": "Oahu Car Rentals",
+    "established": "June 1st, 2020",
+    "tagline": "Simple, fast car rentals on Oʻahu"
+  },
+  "addresses": {
+    "defaultPickup": "123 Main Street, Honolulu, HI 96815",
+    "defaultDropoff": "123 Main Street, Honolulu, HI 96815"
+  },
+  "notices": {
+    "trackerNotice": "Each of our vehicles is equipped with GPS tracking. Any attempt to tamper with or disable the tracking device voids the rental agreement, and the vehicle may be reported stolen.",
+    "trackerNoticeFaq": "Each vehicle is equipped with a GPS tracker for security and recovery. Tampering with, disabling, or removing a tracker violates the rental agreement and may result in the vehicle being reported as stolen."
+  },
+  "home": {
+    "description": "Need a car for your trip? We make it easy to get a quick quote with no hassle. Choose your dates and we'll confirm availability fast. Pickup and drop-off are straightforward with local support. Clean cars, fair prices, and a smooth start to your island time.",
+    "referralText": "We offer referral bonuses for connecting us with renters or buyers—send them our way and we'll take care of the rest.",
+    "reviewsTitle": "Reviews",
+    "reviewsComingSoon": "Reviews coming soon."
+  },
+  "about": {
+    "title": "About Us",
+    "description": "We're a local Oʻahu operation focused on clean cars, straightforward pickup, and quick responses. Our goal is to make your rental easy so you can spend more time enjoying the island.",
+    "establishedLabel": "Established:",
+    "emailLabel": "Email:",
+    "phoneLabel": "Phone:"
+  },
+  "faq": {
+    "title": "FAQ",
+    "items": [
+      {
+        "key": "whatDoINeed",
+        "question": "What do I need to rent?",
+        "answer": "A valid driver's license and proof of valid insurance. We'll confirm details when you request."
+      },
+      {
+        "key": "airportPickup",
+        "question": "Can I pick up at the airport?",
+        "answer": "Yes—tell us your preferred pickup location in the request notes. Yes, we offer delivery anywhere on Island for an additional fee depending on time of delivery and location."
+      },
+      {
+        "key": "sameDay",
+        "question": "Do you allow same-day requests?",
+        "answer": "Often yes, depending on availability. Submit a request and we'll respond quickly."
+      },
+      {
+        "key": "referralBonuses",
+        "question": "Do you offer referral bonuses?",
+        "answerSource": "home.referralText"
+      },
+      {
+        "key": "trackers",
+        "question": "Do your vehicles have trackers?",
+        "answerSource": "notices.trackerNoticeFaq"
+      },
+      {
+        "key": "beachSupplies",
+        "question": "Do you offer beach supply rentals and child seats?",
+        "answer": "Yes we do, depending on availability. We charge a small additional fee."
+      },
+      {
+        "key": "walkAroundForm",
+        "question": "What is the walk-around form?",
+        "answer": "The Walk-Around Form is used at both pickup and return to document the vehicle's condition and note any existing or new damage.",
+        "pdfLink": "walkAroundForm",
+        "pdfLinkText": "Open Walk-Around Form (PDF)"
+      },
+      {
+        "key": "roadsideHelp",
+        "question": "Where can I find roadside help information?",
+        "answer": "Keep the Roadside Assistance Information document accessible during your rental. It outlines common issues and the steps to take if you need help.",
+        "pdfLink": "roadsideInfo",
+        "pdfLinkText": "Open Roadside Info (PDF)"
+      },
+      {
+        "key": "claimReporting",
+        "question": "How do I report a claim or incident?",
+        "answer": "If an accident, damage, or other incident occurs, complete the Claim Reporting Form to provide the details we'll need to assist you.",
+        "pdfLink": "claimReportingForm",
+        "pdfLinkText": "Open Claim Reporting Form (PDF)"
+      }
+    ],
+    "questions": {
+      "whatDoINeed": "What do I need to rent?",
+      "airportPickup": "Can I pick up at the airport?",
+      "sameDay": "Do you allow same-day requests?",
+      "referralBonuses": "Do you offer referral bonuses?",
+      "trackers": "Do your vehicles have trackers?",
+      "beachSupplies": "Do you offer beach supply rentals and child seats?",
+      "walkAroundForm": "What is the walk-around form?",
+      "roadsideHelp": "Where can I find roadside help information?",
+      "claimReporting": "How do I report a claim or incident?"
+    },
+    "answers": {
+      "whatDoINeed": "A valid driver's license and proof of valid insurance. We'll confirm details when you request.",
+      "airportPickup": "Yes—tell us your preferred pickup location in the request notes. Yes, we offer delivery anywhere on Island for an additional fee depending on time of delivery and location.",
+      "sameDay": "Often yes, depending on availability. Submit a request and we'll respond quickly.",
+      "beachSupplies": "Yes we do, depending on availability. We charge a small additional fee.",
+      "walkAroundForm": "The Walk-Around Form is used at both pickup and return to document the vehicle's condition and note any existing or new damage.",
+      "roadsideHelp": "Keep the Roadside Assistance Information document accessible during your rental. It outlines common issues and the steps to take if you need help.",
+      "claimReporting": "If an accident, damage, or other incident occurs, complete the Claim Reporting Form to provide the details we'll need to assist you."
+    },
+    "pdfLinks": {
+      "walkAroundForm": "Open Walk-Around Form (PDF)",
+      "roadsideInfo": "Open Roadside Info (PDF)",
+      "claimReportingForm": "Open Claim Reporting Form (PDF)"
+    }
+  },
+  "gallery": {
+    "title": "Gallery",
+    "noPhotos": "No photos available."
+  },
+  "request": {
+    "title": "Request a Quote",
+    "subtitle": "Tell us what you need and we'll reply with availability + pricing.",
+    "formTitle": "Request"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "message": "Go back",
+    "homeLink": "home"
+  },
+  "quickRequest": {
+    "labels": {
+      "name": "Name",
+      "email": "Email",
+      "startDate": "Start date (Pickup)",
+      "endDate": "End date (Return)",
+      "carType": "Car type (select one or more)",
+      "notes": "Notes (optional)"
+    },
+    "placeholders": {
+      "name": "Your name",
+      "email": "you@email.com",
+      "notes": "If you selected 'Specific car from gallery', please specify which car here. Pickup location? Number of guests? Car seat needed?"
+    },
+    "dailyBudget": "Daily budget range",
+    "buttons": {
+      "submit": "Submit Request",
+      "sending": "Sending..."
+    },
+    "messages": {
+      "dateError": "❌ End date must be after start date.",
+      "success": "✅ Request received — we'll email you shortly.",
+      "error": "❌ Something went wrong. Please try again."
+    }
+  },
+  "requestSuccess": {
+    "title": "✅ Request received",
+    "message": "Thanks! We'll be in contact shortly with availability and next steps.",
+    "backToHome": "Back to Home",
+    "makeAnother": "Make another request"
+  },
+  "mileageOut": {
+    "title": "Mileage & Fuel (Pickup)",
+    "instructions": "Please enter the current mileage and fuel level at pickup, and upload a clear photo of the dashboard showing both.",
+    "sectionTitle": "Pickup Details",
+    "labels": {
+      "mileage": "Mileage (integer)",
+      "fuelLevel": "Fuel Level",
+      "dashboardPhoto": "Dashboard Photo"
+    },
+    "placeholders": {
+      "mileage": "e.g. 58231",
+      "select": "Select…"
+    },
+    "buttons": {
+      "submit": "Submit Pickup Info",
+      "submitting": "Submitting..."
+    },
+    "messages": {
+      "missingToken": "Missing token.",
+      "mileageRequired": "Mileage is required.",
+      "fuelRequired": "Fuel level is required.",
+      "dashboardRequired": "Dashboard photo is required.",
+      "failed": "Failed to submit.",
+      "submitted": "Thanks! Your pickup mileage and fuel have been recorded.",
+      "closePage": "You can close this page."
+    },
+    "debug": {
+      "mileageInLink": "Debug: Mileage In Link",
+      "openMileageIn": "Open Mileage In",
+      "backToHome": "Back to Home"
+    }
+  },
+  "mileageIn": {
+    "title": "Mileage & Fuel (Return)",
+    "instructions": "Please enter the current mileage and fuel level at return, and upload a clear photo of the dashboard showing both.",
+    "sectionTitle": "Return Details",
+    "reviewSectionTitle": "Leave a Review (Optional)",
+    "reviewInstructions": "We'd love to hear about your experience! Your feedback helps us improve.",
+    "labels": {
+      "mileage": "Mileage (integer)",
+      "fuelLevel": "Fuel Level",
+      "dashboardPhoto": "Dashboard Photo",
+      "rating": "Rating",
+      "review": "Your Review"
+    },
+    "placeholders": {
+      "mileage": "e.g. 59002",
+      "select": "Select…",
+      "review": "Tell us about your experience..."
+    },
+    "messages": {
+      "star": "star",
+      "stars": "stars",
+      "characters": "characters",
+      "missingToken": "Missing token.",
+      "mileageRequired": "Mileage is required.",
+      "fuelRequired": "Fuel level is required.",
+      "dashboardRequired": "Dashboard photo is required.",
+      "failed": "Failed to submit.",
+      "completed": "COMPLETED",
+      "thanks": "Thanks — your return mileage and fuel have been recorded.",
+      "closePage": "You can close this page."
+    },
+    "buttons": {
+      "submit": "Submit Return Info",
+      "submitting": "Submitting...",
+      "backToHome": "Back to Home"
+    }
+  },
+  "signedContract": {
+    "title": "Upload Signed Contract",
+    "instructions": "Please upload a clear photo scan of your signed contract (PDF).",
+    "labels": {
+      "signedContract": "Signed contract (PDF)"
+    },
+    "messages": {
+      "selected": "Selected:",
+      "missingToken": "Missing link token.",
+      "chooseFile": "Please choose the signed contract PDF.",
+      "uploadFailed": "Upload failed",
+      "uploaded": "✅ Signed contract uploaded."
+    },
+    "buttons": {
+      "upload": "Upload Signed Contract",
+      "uploading": "Uploading..."
+    },
+    "debug": {
+      "savedFile": "Debug: Saved File",
+      "openInDrive": "Open in Google Drive"
+    }
+  },
+  "customerSuccess": {
+    "title": "Thank you!",
+    "message": "Your information has been submitted successfully.",
+    "contactMessage": "If you need to correct or update anything, please contact us.",
+    "backToHome": "Back to Home",
+    "debug": {
+      "mileageOutLink": "Debug: Mileage Out Link",
+      "openMileageOut": "Open Mileage Out",
+      "signedContractLink": "Debug: Signed Contract Upload Link",
+      "uploadSignedContract": "Upload Signed Contract"
+    }
+  },
+  "admin": {
+    "titles": {
+      "pickupInstructions": "Admin: Pickup Instructions",
+      "dropoffInstructions": "Admin: Dropoff Instructions",
+      "requestCustomerInfo": "Admin: Request Customer Info",
+      "customerInfo": "Admin: Customer Info"
+    },
+    "pages": {
+      "pickupInstructions": {
+        "title": "Pickup Instructions",
+        "labels": {
+          "pickupAddress": "Pickup Address",
+          "pickupInstructions": "Pickup instructions (optional)"
+        },
+        "placeholders": {
+          "pickupAddress": "Pickup address",
+          "pickupInstructions": "Where to meet, what to bring, parking notes, etc."
+        },
+        "buttons": {
+          "generate": "Generate Pickup Link",
+          "generating": "Generating..."
+        },
+        "draftLabels": {
+          "vin": "VIN:",
+          "start": "Start:",
+          "end": "End:",
+          "customer": "Customer:"
+        }
+      },
+      "dropoffInstructions": {
+        "title": "Dropoff Instructions",
+        "labels": {
+          "dropoffAddress": "Dropoff Address",
+          "dropoffInstructions": "Dropoff instructions (optional)"
+        },
+        "placeholders": {
+          "dropoffAddress": "Dropoff address",
+          "dropoffInstructions": "Where to park, what to do with keys, photos to take, etc."
+        },
+        "buttons": {
+          "generate": "Generate Dropoff Link",
+          "generating": "Generating..."
+        }
+      },
+      "requestCustomerInfo": {
+        "title": "Request Customer Info",
+        "labels": {
+          "vin": "VIN",
+          "make": "Make",
+          "color": "Color",
+          "model": "Model",
+          "licensePlate": "License Plate",
+          "startDate": "Start Date (Pickup)",
+          "endDate": "End Date (Return)",
+          "customerEmail": "Customer Email",
+          "costPerDay": "Cost Per Day (integer)"
+        },
+        "placeholders": {
+          "costPerDay": "e.g. 85"
+        },
+        "messages": {
+          "willBeSaved": "Will be saved as",
+          "endDateError": "End date must be after start date.",
+          "failed": "Failed to create link.",
+          "linkCreated": "✅ Link created"
+        },
+        "buttons": {
+          "create": "Create Customer Info Link",
+          "creating": "Creating..."
+        }
+      },
+      "customerInfo": {
+        "labels": {
+          "lastName": "Last Name",
+          "firstName": "First Name",
+          "mi": "MI",
+          "homeAddress": "Home Address",
+          "city": "City",
+          "state": "State",
+          "zip": "Zip",
+          "homePhone": "Home Phone",
+          "businessPhone": "Business Phone",
+          "cell": "Cell",
+          "dob": "DOB",
+          "dlNumber": "DL Number",
+          "dlState": "DL State",
+          "dlExp": "DL Exp",
+          "employer": "Employer",
+          "employerCity": "Employer City",
+          "employerState": "Employer State",
+          "insuranceCompany": "Insurance Company",
+          "companyPhone": "Company Phone",
+          "agentName": "Agent Name",
+          "agentPhone": "Agent Phone",
+          "secondDriver": "Second Driver",
+          "addSecondDriver": "Add Second Driver",
+          "removeSecondDriver": "Remove Second Driver"
+        },
+        "fileLabels": {
+          "insurance": "Insurance Card",
+          "license": "Driver's License",
+          "selfie": "Selfie with License"
+        },
+        "buttons": {
+          "remove": "Remove",
+          "submit": "Submit Customer Info",
+          "submitting": "Submitting..."
+        },
+        "messages": {
+          "required": "Required",
+          "dateFormat": "Use YYYY-MM-DD",
+          "fixFields": "Please fix the highlighted fields.",
+          "invalidLink": "Invalid link.",
+          "missingToken": "Missing token.",
+          "failed": "Failed to submit. Please try again.",
+          "submitted": "✅ Submitted successfully!"
+        }
+      }
+    },
+    "common": {
+      "customerPickupLink": "Customer Pickup Link (Mileage Out)",
+      "customerReturnLink": "Customer Return Link (Mileage In)",
+      "debugEmailPreview": "Debug Email Preview"
+    },
+    "gate": {
+      "title": "Admin Access",
+      "passwordPlaceholder": "Password",
+      "unlock": "Unlock",
+      "wrongPassword": "Wrong password.",
+      "missingPassword": "Missing VITE_ADMIN_PASSWORD env var."
+    }
+  },
+  "navigation": {
+    "menu": "Menu",
+    "home": "Home",
+    "gallery": "Gallery",
+    "request": "Request",
+    "faq": "FAQ",
+    "about": "About Us"
+  },
+  "common": {
+    "buttons": {
+      "backToHome": "Back to Home",
+      "submitting": "Submitting...",
+      "generating": "Generating...",
+      "uploading": "Uploading...",
+      "creating": "Creating...",
+      "sending": "Sending..."
+    },
+    "messages": {
+      "missingToken": "Missing token.",
+      "invalidLink": "Invalid or expired link.",
+      "failed": "Failed to submit.",
+      "somethingWentWrong": "Something went wrong. Please try again."
+    },
+    "labels": {
+      "optional": "(optional)"
+    }
+  }
+}

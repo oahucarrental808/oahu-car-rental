@@ -1,79 +1,87 @@
+import { useMemo } from "react";
 import FaqItem from "../components/FaqItem";
+import { useProperties } from "../utils/useProperties";
 
 import walkAroundPdf from "../assets/X RENTAL Walk-Around Form.pdf";
 import roadsidePdf from "../assets/Y RENTAL Roadside info.pdf";
 import claimReportingPdf from "../assets/Z RENTAL Claim Reporting Form.pdf";
 
+// Map PDF keys to actual PDF imports
+const pdfMap = {
+  walkAroundForm: walkAroundPdf,
+  roadsideInfo: roadsidePdf,
+  claimReportingForm: claimReportingPdf,
+};
+
 export default function Faq() {
-  const referralText =
-    "We offer referral bonuses for connecting us with renters or buyers—send them our way and we’ll take care of the rest.";
+  const [properties] = useProperties();
 
-  const trackerText =
-    "Each vehicle is equipped with a GPS tracker for security and recovery. Tampering with, disabling, or removing a tracker violates the rental agreement and may result in the vehicle being reported as stolen.";
+  // Get answer from a nested path (e.g., "home.referralText")
+  const getAnswerFromPath = (path) => {
+    if (!path || !properties) return "";
+    const keys = path.split(".");
+    let value = properties;
+    for (const key of keys) {
+      if (value && typeof value === "object" && key in value) {
+        value = value[key];
+      } else {
+        return "";
+      }
+    }
+    return value || "";
+  };
 
-const walkAroundAnswer = (
-  <>
-    The Walk-Around Form is used at both pickup and return to document the vehicle’s condition and note any existing or new damage.
-    <div style={{ marginTop: 8 }}>
-      <a href={walkAroundPdf} target="_blank" rel="noreferrer">
-        Open Walk-Around Form (PDF)
-      </a>
-    </div>
-  </>
-);
+  // Render FAQ items dynamically from properties
+  const faqItems = useMemo(() => {
+    if (!properties?.faq?.items || !Array.isArray(properties.faq.items)) {
+      return [];
+    }
 
-const roadsideAnswer = (
-  <>
-    Keep the Roadside Assistance Information document accessible during your rental. It outlines common issues and the steps to take if you need help.
-    <div style={{ marginTop: 8 }}>
-      <a href={roadsidePdf} target="_blank" rel="noreferrer">
-        Open Roadside Info (PDF)
-      </a>
-    </div>
-  </>
-);
+    return properties.faq.items.map((item) => {
+      let answer = item.answer || "";
 
-const claimAnswer = (
-  <>
-    If an accident, damage, or other incident occurs, complete the Claim Reporting Form to provide the details we’ll need to assist you.
-    <div style={{ marginTop: 8 }}>
-      <a href={claimReportingPdf} target="_blank" rel="noreferrer">
-        Open Claim Reporting Form (PDF)
-      </a>
-    </div>
-  </>
-);
+      // Handle answerSource (for cross-references)
+      if (item.answerSource) {
+        answer = getAnswerFromPath(item.answerSource);
+      }
 
+      // Handle PDF links
+      if (item.pdfLink && pdfMap[item.pdfLink]) {
+        const pdfUrl = pdfMap[item.pdfLink];
+        const pdfLinkText = item.pdfLinkText || properties?.faq?.pdfLinks?.[item.pdfLink] || "Open PDF";
+        
+        answer = (
+          <>
+            {answer}
+            <div style={{ marginTop: 8 }}>
+              <a href={pdfUrl} target="_blank" rel="noreferrer">
+                {pdfLinkText}
+              </a>
+            </div>
+          </>
+        );
+      }
+
+      return {
+        question: item.question || "",
+        answer: answer || "",
+      };
+    });
+  }, [properties]);
 
   return (
     <div style={{ width: "min(900px, 92%)", margin: "0 auto", padding: "28px 0 60px" }}>
-      <h1 style={{ fontSize: "34px", margin: "0 0 10px" }}>FAQ</h1>
+      <h1 style={{ fontSize: "34px", margin: "0 0 10px" }}>
+        {properties?.faq?.title || "FAQ"}
+      </h1>
 
-      <FaqItem
-        q="What do I need to rent?"
-        a="A valid driver's license and proof of valid insurance. We'll confirm details when you request."
-      />
-      <FaqItem
-        q="Can I pick up at the airport?"
-        a="Yes—tell us your preferred pickup location in the request notes. Yes, we offer delivery anywhere on Island for an additional fee depending on time of delivery and location."
-      />
-      <FaqItem
-        q="Do you allow same-day requests?"
-        a="Often yes, depending on availability. Submit a request and we’ll respond quickly."
-      />
-
-      <FaqItem q="Do you offer referral bonuses?" a={referralText} />
-
-      <FaqItem q="Do your vehicles have trackers?" a={trackerText} />
-
-      <FaqItem
-        q="Do you offer beach supply rentals and child seats?"
-        a="Yes we do, depending on availability. We charge a small additional fee."
-      />
-
-      <FaqItem q="What is the walk-around form?" a={walkAroundAnswer} />
-      <FaqItem q="Where can I find roadside help information?" a={roadsideAnswer} />
-      <FaqItem q="How do I report a claim or incident?" a={claimAnswer} />
+      {faqItems.length > 0 ? (
+        faqItems.map((item, index) => (
+          <FaqItem key={index} q={item.question} a={item.answer} />
+        ))
+      ) : (
+        <p style={{ opacity: 0.8 }}>No FAQ items available.</p>
+      )}
     </div>
   );
 }

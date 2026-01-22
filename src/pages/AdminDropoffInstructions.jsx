@@ -2,22 +2,28 @@ import { useEffect, useMemo, useState } from "react";
 import AdminGate from "../components/AdminGate";
 import { buttonStyle, container, inputStyle, labelStyle, textareaStyle } from "../components/styles";
 import { getTokenFromUrl, formatEmailPreviewText } from "../utils/adminUtils";
+import { useProperties } from "../utils/useProperties";
 
 const DEBUG = import.meta.env.VITE_DEBUG_MODE === "true";
 
-// Default dropoff address - can be overwritten by TJ
-const DEFAULT_DROPOFF_ADDRESS = "123 Main Street, Honolulu, HI 96815";
-
 export default function AdminDropoffInstructions() {
+  const [properties] = useProperties();
   const [token, setToken] = useState("");
   const [draft, setDraft] = useState(null);
   const [instructions, setInstructions] = useState("");
-  const [address, setAddress] = useState(DEFAULT_DROPOFF_ADDRESS);
+  const [address, setAddress] = useState("");
   const [status, setStatus] = useState("idle"); // idle | loading | ready | sending | sent | error
   const [error, setError] = useState("");
 
   const [mileageInUrl, setMileageInUrl] = useState("");
   const [debugEmail, setDebugEmail] = useState(null);
+
+  // Set default address when properties load
+  useEffect(() => {
+    if (properties?.addresses?.defaultDropoff && !address) {
+      setAddress(properties.addresses.defaultDropoff);
+    }
+  }, [properties, address]);
 
   useEffect(() => {
     const t = getTokenFromUrl();
@@ -85,16 +91,26 @@ export default function AdminDropoffInstructions() {
   }
 
   return (
-    <AdminGate title="Admin: Dropoff Instructions">
+    <AdminGate title={properties?.admin?.titles?.dropoffInstructions || "Admin: Dropoff Instructions"}>
       <div style={container}>
-        <h1 style={{ marginBottom: 8 }}>Dropoff Instructions</h1>
+        <h1 style={{ marginBottom: 8 }}>
+          {properties?.admin?.pages?.dropoffInstructions?.title || "Dropoff Instructions"}
+        </h1>
 
         {draft ? (
           <div style={{ marginBottom: 16, opacity: 0.9 }}>
-            <div style={{ fontWeight: 800 }}>VIN: {draft.vin}</div>
-            <div>Start: {draft.startDate}</div>
-            <div>End: {draft.endDate}</div>
-            <div>Customer: {draft.customerEmail}</div>
+            <div style={{ fontWeight: 800 }}>
+              {properties?.admin?.pages?.pickupInstructions?.draftLabels?.vin || "VIN:"} {draft.vin}
+            </div>
+            <div>
+              {properties?.admin?.pages?.pickupInstructions?.draftLabels?.start || "Start:"} {draft.startDate}
+            </div>
+            <div>
+              {properties?.admin?.pages?.pickupInstructions?.draftLabels?.end || "End:"} {draft.endDate}
+            </div>
+            <div>
+              {properties?.admin?.pages?.pickupInstructions?.draftLabels?.customer || "Customer:"} {draft.customerEmail}
+            </div>
           </div>
         ) : null}
 
@@ -115,21 +131,23 @@ export default function AdminDropoffInstructions() {
 
         <form onSubmit={onSubmit}>
           <label style={labelStyle}>
-            Dropoff Address
+            {properties?.admin?.pages?.dropoffInstructions?.labels?.dropoffAddress || "Dropoff Address"}
             <input
               style={inputStyle}
               type="text"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
-              placeholder="Dropoff address"
+              placeholder={properties?.admin?.pages?.dropoffInstructions?.placeholders?.dropoffAddress || "Dropoff address"}
             />
           </label>
 
-          <label style={labelStyle}>Dropoff instructions (optional)</label>
+          <label style={labelStyle}>
+            {properties?.admin?.pages?.dropoffInstructions?.labels?.dropoffInstructions || "Dropoff instructions (optional)"}
+          </label>
           <textarea
             style={textareaStyle}
             rows={7}
-            placeholder="Where to park, what to do with keys, photos to take, etc."
+            placeholder={properties?.admin?.pages?.dropoffInstructions?.placeholders?.dropoffInstructions || "Where to park, what to do with keys, photos to take, etc."}
             value={instructions}
             onChange={(e) => setInstructions(e.target.value)}
           />
@@ -140,7 +158,9 @@ export default function AdminDropoffInstructions() {
             style={{ ...buttonStyle, width: "100%", marginTop: 14 }}
             disabled={status === "loading" || status === "sending"}
           >
-            {status === "sending" ? "Generating..." : "Generate Dropoff Link"}
+            {status === "sending" 
+              ? (properties?.common?.buttons?.generating || "Generating...")
+              : (properties?.admin?.pages?.dropoffInstructions?.buttons?.generate || "Generate Dropoff Link")}
           </button>
         </form>
 
@@ -155,17 +175,21 @@ export default function AdminDropoffInstructions() {
               background: "rgba(255,255,255,0.85)",
             }}
           >
-            <div style={{ fontWeight: 900, marginBottom: 8 }}>Customer Return Link (Mileage In)</div>
+            <div style={{ fontWeight: 900, marginBottom: 8 }}>
+              {properties?.admin?.common?.customerReturnLink || "Customer Return Link (Mileage In)"}
+            </div>
             <input readOnly value={mileageInUrl} style={inputStyle} />
             <div style={{ marginTop: 10 }}>
               <a className="button" href={mileageInUrl}>
-                Open Mileage In
+                {properties?.mileageIn?.buttons?.openMileageIn || "Open Mileage In"}
               </a>
             </div>
 
             {emailPreviewText ? (
               <div style={{ marginTop: 14 }}>
-                <div style={{ fontWeight: 900, marginBottom: 8 }}>Debug Email Preview</div>
+                <div style={{ fontWeight: 900, marginBottom: 8 }}>
+                  {properties?.admin?.common?.debugEmailPreview || "Debug Email Preview"}
+                </div>
                 <pre
                   style={{
                     margin: 0,

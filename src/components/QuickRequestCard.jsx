@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { buttonStyle, inputStyle, labelStyle, textareaStyle } from "./styles";
+import { useProperties } from "../utils/useProperties";
 
 
 const CAR_TYPE_OPTIONS = [
@@ -12,6 +13,7 @@ const CAR_TYPE_OPTIONS = [
 ];
 
 export default function QuickRequestCard({ title = "Request", subtitle, onSuccess }) {
+  const [properties] = useProperties();
   const [status, setStatus] = useState("idle"); // idle | sending | sent | error
 
   // Price range state
@@ -113,18 +115,18 @@ export default function QuickRequestCard({ title = "Request", subtitle, onSucces
 
       <form onSubmit={onSubmit} style={{ display: "grid", gap: "10px", marginTop: "12px" }}>
         <label style={labelStyle}>
-          Name
-          <input name="name" required placeholder="Your name" style={inputStyle} />
+          {properties?.quickRequest?.labels?.name || "Name"}
+          <input name="name" required placeholder={properties?.quickRequest?.placeholders?.name || "Your name"} style={inputStyle} />
         </label>
 
         <label style={labelStyle}>
-          Email
-          <input name="email" type="email" required placeholder="you@email.com" style={inputStyle} />
+          {properties?.quickRequest?.labels?.email || "Email"}
+          <input name="email" type="email" required placeholder={properties?.quickRequest?.placeholders?.email || "you@email.com"} style={inputStyle} />
         </label>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
           <label style={labelStyle}>
-            Start date (Pickup)
+            {properties?.quickRequest?.labels?.startDate || "Start date (Pickup)"}
             <input 
               name="startDate" 
               type="date" 
@@ -142,7 +144,7 @@ export default function QuickRequestCard({ title = "Request", subtitle, onSucces
           </label>
 
           <label style={labelStyle}>
-            End date (Return)
+            {properties?.quickRequest?.labels?.endDate || "End date (Return)"}
             <input 
               name="endDate" 
               type="date" 
@@ -157,13 +159,13 @@ export default function QuickRequestCard({ title = "Request", subtitle, onSucces
         
         {status === "error" && startDate && endDate && new Date(endDate) <= new Date(startDate) && (
           <div style={{ fontSize: "13px", color: "crimson" }}>
-            ❌ End date must be after start date.
+            {properties?.quickRequest?.messages?.dateError || "❌ End date must be after start date."}
           </div>
         )}
 
         {/* Car type multi-select */}
         <label style={labelStyle}>
-          Car type (select one or more)
+          {properties?.quickRequest?.labels?.carType || "Car type (select one or more)"}
           <select
             name="carTypes"
             multiple
@@ -181,7 +183,9 @@ export default function QuickRequestCard({ title = "Request", subtitle, onSucces
         {/* Price range */}
         <div style={{ display: "grid", gap: "8px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", gap: "10px" }}>
-            <div style={{ fontSize: "13px", opacity: 0.95 }}>Daily budget range</div>
+            <div style={{ fontSize: "13px", opacity: 0.95 }}>
+              {properties?.quickRequest?.dailyBudget || "Daily budget range"}
+            </div>
             <div style={{ fontSize: "13px", fontWeight: 800 }}>
               ${safeMin} – ${safeMax}
             </div>
@@ -217,24 +221,30 @@ export default function QuickRequestCard({ title = "Request", subtitle, onSucces
         </div>
 
         <label style={labelStyle}>
-          Notes (optional)
+          {properties?.quickRequest?.labels?.notes || "Notes (optional)"}
           <textarea
             name="notes"
             rows={3}
-            placeholder="If you selected 'Specific car from gallery', please specify which car here. Pickup location? Number of guests? Car seat needed?"
+            placeholder={properties?.quickRequest?.placeholders?.notes || "If you selected 'Specific car from gallery', please specify which car here. Pickup location? Number of guests? Car seat needed?"}
             style={textareaStyle}
           />
         </label>
 
         <button type="submit" disabled={status === "sending"} style={buttonStyle}>
-          {status === "sending" ? "Sending..." : "Submit Request"}
+          {status === "sending" 
+            ? (properties?.quickRequest?.buttons?.sending || properties?.common?.buttons?.sending || "Sending...")
+            : (properties?.quickRequest?.buttons?.submit || "Submit Request")}
         </button>
 
         {status === "sent" && (
-          <div style={{ fontSize: "13px" }}>✅ Request received — we’ll email you shortly.</div>
+          <div style={{ fontSize: "13px" }}>
+            {properties?.quickRequest?.messages?.success || "✅ Request received — we'll email you shortly."}
+          </div>
         )}
         {status === "error" && (
-          <div style={{ fontSize: "13px" }}>❌ Something went wrong. Please try again.</div>
+          <div style={{ fontSize: "13px" }}>
+            {properties?.quickRequest?.messages?.error || properties?.common?.messages?.somethingWentWrong || "❌ Something went wrong. Please try again."}
+          </div>
         )}
       </form>
     </div>

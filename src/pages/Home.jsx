@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import QuickRequestCard from "../components/QuickRequestCard";
 import { container } from "../components/styles";
+import { useProperties } from "../utils/useProperties";
 
 import reviews from "../data/reviews.json";
 
@@ -9,6 +10,7 @@ import heroImg from "../assets/hero.jpg";
 
 
 export default function Home() {
+  const [properties] = useProperties();
   const navigate = useNavigate();
 
   // ---- rotating reviews (reads from JSON) ----
@@ -34,9 +36,6 @@ export default function Home() {
     return "★★★★★☆☆☆☆☆".slice(5 - x, 10 - x);
   }
 
-  const referralText =
-    "We offer referral bonuses for connecting us with renters or buyers—send them our way and we’ll take care of the rest.";
-
   return (
     <>
       {/* HERO */}
@@ -50,33 +49,30 @@ export default function Home() {
           {/* LEFT COPY */}
           <div>
             <div style={{ fontSize: "14px", letterSpacing: "0.08em", opacity: 0.9 }}>
-              OAHU CAR RENTALS
+              {properties?.brand?.name || "OAHU CAR RENTALS"}
             </div>
             <div style={{ fontSize: "12px", opacity: 0.85, marginTop: "4px" }}>
-              Established June 1st, 2020
+              Established {properties?.brand?.established || "June 1st, 2020"}
             </div>
 
             <h1 style={{ fontSize: "44px", lineHeight: 1.1, margin: "10px 0 14px" }}>
-              Simple, fast car rentals on Oʻahu
+              {properties?.brand?.tagline || "Simple, fast car rentals on Oʻahu"}
             </h1>
 
             <p style={{ fontSize: "16px", lineHeight: 1.7, maxWidth: "52ch", opacity: 0.95 }}>
-              Need a car for your trip? We make it easy to get a quick quote with no hassle.
-              Choose your dates and we’ll confirm availability fast.
-              Pickup and drop-off are straightforward with local support.
-              Clean cars, fair prices, and a smooth start to your island time.
+              {properties?.home?.description || "Need a car for your trip? We make it easy to get a quick quote with no hassle. Choose your dates and we'll confirm availability fast. Pickup and drop-off are straightforward with local support. Clean cars, fair prices, and a smooth start to your island time."}
             </p>
 
             <div style={{ marginTop: 14, fontSize: 14, opacity: 0.9, maxWidth: "52ch" }}>
-              {referralText}
+              {properties?.home?.referralText || properties?.faq?.answers?.referralBonuses || "We offer referral bonuses for connecting us with renters or buyers—send them our way and we'll take care of the rest."}
             </div>
           </div>
 
           {/* RIGHT FORM */}
           <div style={{ width: "100%" }}>
             <QuickRequestCard
-              title="Request"
-              subtitle="Tell us what you need and we’ll reply with availability + pricing."
+              title={properties?.request?.formTitle || "Request"}
+              subtitle={properties?.request?.subtitle || "Tell us what you need and we'll reply with availability + pricing."}
               onSuccess={() => navigate("/request")}
             />
           </div>
@@ -97,12 +93,12 @@ export default function Home() {
             }}
           >
             <div style={{ fontWeight: 900, letterSpacing: "0.02em", marginBottom: 6 }}>
-              Reviews
+              {properties?.home?.reviewsTitle || "Reviews"}
             </div>
 
             {!current ? (
               <div style={{ opacity: 0.8, lineHeight: 1.5 }}>
-                Reviews coming soon.
+                {properties?.home?.reviewsComingSoon || "Reviews coming soon."}
               </div>
             ) : (
               <>

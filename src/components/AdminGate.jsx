@@ -1,8 +1,10 @@
 import { useMemo, useState } from "react";
+import { useProperties } from "../utils/useProperties";
 
 const KEY = "orc_admin_unlocked_until";
 
 export default function AdminGate({ children, title = "Admin Access" }) {
+  const [properties] = useProperties();
   const [pw, setPw] = useState("");
   const [err, setErr] = useState("");
 
@@ -17,11 +19,11 @@ export default function AdminGate({ children, title = "Admin Access" }) {
 
     const expected = import.meta.env.VITE_ADMIN_PASSWORD;
     if (!expected) {
-      setErr("Missing VITE_ADMIN_PASSWORD env var.");
+      setErr(properties?.admin?.gate?.missingPassword || "Missing VITE_ADMIN_PASSWORD env var.");
       return;
     }
     if (pw !== expected) {
-      setErr("Wrong password.");
+      setErr(properties?.admin?.gate?.wrongPassword || "Wrong password.");
       return;
     }
 
@@ -40,11 +42,11 @@ export default function AdminGate({ children, title = "Admin Access" }) {
           type="password"
           value={pw}
           onChange={(e) => setPw(e.target.value)}
-          placeholder="Password"
+          placeholder={properties?.admin?.gate?.passwordPlaceholder || "Password"}
           style={{ padding: 10, borderRadius: 10 }}
         />
         <button type="submit" style={{ padding: 10, borderRadius: 10 }}>
-          Unlock
+          {properties?.admin?.gate?.unlock || "Unlock"}
         </button>
         {err && <div style={{ color: "salmon" }}>{err}</div>}
       </form>

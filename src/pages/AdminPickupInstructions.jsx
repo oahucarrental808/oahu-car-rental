@@ -2,17 +2,23 @@ import { useEffect, useMemo, useState } from "react";
 import AdminGate from "../components/AdminGate";
 import { buttonStyle, container, inputStyle, labelStyle, textareaStyle } from "../components/styles";
 import { getTokenFromUrl, formatEmailPreviewText } from "../utils/adminUtils";
+import { useProperties } from "../utils/useProperties";
 
 const DEBUG = import.meta.env.VITE_DEBUG_MODE === "true";
 
-// Default pickup address - can be overwritten by TJ
-const DEFAULT_PICKUP_ADDRESS = "123 Main Street, Honolulu, HI 96815";
-
 export default function AdminPickupInstructions() {
+  const [properties] = useProperties();
   const [token, setToken] = useState("");
   const [draft, setDraft] = useState(null);
   const [instructions, setInstructions] = useState("");
-  const [address, setAddress] = useState(DEFAULT_PICKUP_ADDRESS);
+  const [address, setAddress] = useState("");
+
+  // Set default address when properties load
+  useEffect(() => {
+    if (properties?.addresses?.defaultPickup && !address) {
+      setAddress(properties.addresses.defaultPickup);
+    }
+  }, [properties, address]);
   const [status, setStatus] = useState("idle"); // idle | loading | ready | sending | sent | error
   const [error, setError] = useState("");
 
@@ -85,16 +91,26 @@ export default function AdminPickupInstructions() {
   }
 
   return (
-    <AdminGate title="Admin: Pickup Instructions">
+    <AdminGate title={properties?.admin?.titles?.pickupInstructions || "Admin: Pickup Instructions"}>
       <div style={container}>
-        <h1 style={{ marginBottom: 8 }}>Pickup Instructions</h1>
+        <h1 style={{ marginBottom: 8 }}>
+          {properties?.admin?.pages?.pickupInstructions?.title || "Pickup Instructions"}
+        </h1>
 
         {draft ? (
           <div style={{ marginBottom: 16, opacity: 0.9 }}>
-            <div style={{ fontWeight: 800 }}>VIN: {draft.vin}</div>
-            <div>Start: {draft.startDate}</div>
-            <div>End: {draft.endDate}</div>
-            <div>Customer: {draft.customerEmail}</div>
+            <div style={{ fontWeight: 800 }}>
+              {properties?.admin?.pages?.pickupInstructions?.draftLabels?.vin || "VIN:"} {draft.vin}
+            </div>
+            <div>
+              {properties?.admin?.pages?.pickupInstructions?.draftLabels?.start || "Start:"} {draft.startDate}
+            </div>
+            <div>
+              {properties?.admin?.pages?.pickupInstructions?.draftLabels?.end || "End:"} {draft.endDate}
+            </div>
+            <div>
+              {properties?.admin?.pages?.pickupInstructions?.draftLabels?.customer || "Customer:"} {draft.customerEmail}
+            </div>
           </div>
         ) : null}
 
@@ -115,21 +131,23 @@ export default function AdminPickupInstructions() {
 
         <form onSubmit={onSubmit}>
           <label style={labelStyle}>
-            Pickup Address
+            {properties?.admin?.pages?.pickupInstructions?.labels?.pickupAddress || "Pickup Address"}
             <input
               style={inputStyle}
               type="text"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
-              placeholder="Pickup address"
+              placeholder={properties?.admin?.pages?.pickupInstructions?.placeholders?.pickupAddress || "Pickup address"}
             />
           </label>
 
-          <label style={labelStyle}>Pickup instructions (optional)</label>
+          <label style={labelStyle}>
+            {properties?.admin?.pages?.pickupInstructions?.labels?.pickupInstructions || "Pickup instructions (optional)"}
+          </label>
           <textarea
             style={textareaStyle}
             rows={7}
-            placeholder="Where to meet, what to bring, parking notes, etc."
+            placeholder={properties?.admin?.pages?.pickupInstructions?.placeholders?.pickupInstructions || "Where to meet, what to bring, parking notes, etc."}
             value={instructions}
             onChange={(e) => setInstructions(e.target.value)}
           />
@@ -140,7 +158,9 @@ export default function AdminPickupInstructions() {
             style={{ ...buttonStyle, width: "100%", marginTop: 14 }}
             disabled={status === "loading" || status === "sending"}
           >
-            {status === "sending" ? "Generating..." : "Generate Pickup Link"}
+            {status === "sending" 
+              ? (properties?.common?.buttons?.generating || "Generating...")
+              : (properties?.admin?.pages?.pickupInstructions?.buttons?.generate || "Generate Pickup Link")}
           </button>
         </form>
 
@@ -155,17 +175,21 @@ export default function AdminPickupInstructions() {
               background: "rgba(255,255,255,0.85)",
             }}
           >
-            <div style={{ fontWeight: 900, marginBottom: 8 }}>Customer Pickup Link (Mileage Out)</div>
+            <div style={{ fontWeight: 900, marginBottom: 8 }}>
+              {properties?.admin?.common?.customerPickupLink || "Customer Pickup Link (Mileage Out)"}
+            </div>
             <input readOnly value={mileageOutUrl} style={inputStyle} />
             <div style={{ marginTop: 10 }}>
               <a className="button" href={mileageOutUrl}>
-                Open Mileage Out
+                {properties?.mileageOut?.debug?.openMileageIn || "Open Mileage Out"}
               </a>
             </div>
 
             {emailPreviewText ? (
               <div style={{ marginTop: 14 }}>
-                <div style={{ fontWeight: 900, marginBottom: 8 }}>Debug Email Preview</div>
+                <div style={{ fontWeight: 900, marginBottom: 8 }}>
+                  {properties?.admin?.common?.debugEmailPreview || "Debug Email Preview"}
+                </div>
                 <pre
                   style={{
                     margin: 0,

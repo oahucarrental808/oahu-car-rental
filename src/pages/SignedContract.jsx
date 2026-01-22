@@ -1,10 +1,12 @@
 import { useMemo, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { buttonStyle, inputStyle } from "../components/styles";
+import { useProperties } from "../utils/useProperties";
 
 const DEBUG = import.meta.env.VITE_DEBUG_MODE === "true";
 
 export default function SignedContract() {
+  const [properties] = useProperties();
   const [params] = useSearchParams();
   const token = params.get("t") || "";
 
@@ -33,12 +35,12 @@ export default function SignedContract() {
     setError("");
 
     if (!token) {
-      setError("Missing link token.");
+      setError(properties?.signedContract?.messages?.missingToken || "Missing link token.");
       return;
     }
 
     if (!signedContract) {
-      setError("Please choose the signed contract PDF.");
+      setError(properties?.signedContract?.messages?.chooseFile || "Please choose the signed contract PDF.");
       return;
     }
 
@@ -54,30 +56,32 @@ export default function SignedContract() {
       });
 
       const data = await resp.json().catch(() => ({}));
-      if (!resp.ok || !data.ok) throw new Error(data.error || "Upload failed");
+      if (!resp.ok || !data.ok) throw new Error(data.error || properties?.signedContract?.messages?.uploadFailed || "Upload failed");
 
       setSignedContractLink(data.signedContractLink || "");
       setDebugEmail(data.debugEmail || null);
       setStatus("done");
     } catch (err) {
       console.error(err);
-      setError(err?.message || "Upload failed");
+      setError(err?.message || properties?.signedContract?.messages?.uploadFailed || "Upload failed");
       setStatus("error");
     }
   }
 
   return (
     <div style={{ width: "min(900px, 92%)", margin: "0 auto", padding: "28px 0 60px" }}>
-      <h1 style={{ fontSize: "34px", margin: "0 0 10px" }}>Upload Signed Contract</h1>
+      <h1 style={{ fontSize: "34px", margin: "0 0 10px" }}>
+        {properties?.signedContract?.title || "Upload Signed Contract"}
+      </h1>
 
       <div style={{ maxWidth: 680 }}>
         <p style={{ opacity: 0.9, lineHeight: 1.6, marginTop: 0 }}>
-          Please upload a clear photo scan of your signed contract (PDF).
+          {properties?.signedContract?.instructions || "Please upload a clear photo scan of your signed contract (PDF)."}
         </p>
 
         <form onSubmit={onSubmit} style={{ display: "grid", gap: 12 }}>
           <label style={{ display: "grid", gap: 6, fontSize: 13, opacity: 0.95 }}>
-            Signed contract (PDF)
+            {properties?.signedContract?.labels?.signedContract || "Signed contract (PDF)"}
             <input
               type="file"
               accept="application/pdf"
@@ -88,18 +92,22 @@ export default function SignedContract() {
           </label>
 
           {fileLabel ? (
-            <div style={{ fontSize: 13, opacity: 0.9 }}>Selected: {fileLabel}</div>
+            <div style={{ fontSize: 13, opacity: 0.9 }}>
+              {properties?.signedContract?.messages?.selected || "Selected:"} {fileLabel}
+            </div>
           ) : null}
 
           <button type="submit" disabled={status === "sending"} style={buttonStyle}>
-            {status === "sending" ? "Uploading..." : "Upload Signed Contract"}
+            {status === "sending" 
+              ? (properties?.signedContract?.buttons?.uploading || properties?.common?.buttons?.uploading || "Uploading...")
+              : (properties?.signedContract?.buttons?.upload || "Upload Signed Contract")}
           </button>
 
           {error ? <div style={{ fontSize: 13, color: "salmon" }}>{error}</div> : null}
 
           {status === "done" ? (
             <div style={{ fontSize: 13, opacity: 0.95 }}>
-              ✅ Signed contract uploaded.
+              ✅ {properties?.signedContract?.messages?.uploaded || "Signed contract uploaded."}
             </div>
           ) : null}
         </form>
@@ -115,7 +123,9 @@ export default function SignedContract() {
               background: "rgba(255,255,255,0.85)",
             }}
           >
-            <div style={{ fontWeight: 900, marginBottom: 8 }}>Debug: Saved File</div>
+            <div style={{ fontWeight: 900, marginBottom: 8 }}>
+              {properties?.signedContract?.debug?.savedFile || "Debug: Saved File"}
+            </div>
             <input
               readOnly
               value={signedContractLink}
@@ -128,13 +138,15 @@ export default function SignedContract() {
             />
             <div style={{ marginTop: 10 }}>
               <a className="button" href={signedContractLink} target="_blank" rel="noreferrer">
-                Open in Google Drive
+                {properties?.signedContract?.debug?.openInDrive || "Open in Google Drive"}
               </a>
             </div>
 
             {debugEmailText ? (
               <div style={{ marginTop: 14 }}>
-                <div style={{ fontWeight: 900, marginBottom: 8 }}>Debug Email Preview</div>
+                <div style={{ fontWeight: 900, marginBottom: 8 }}>
+                  {properties?.admin?.common?.debugEmailPreview || "Debug Email Preview"}
+                </div>
                 <pre
                   style={{
                     margin: 0,
@@ -155,7 +167,7 @@ export default function SignedContract() {
 
         <div style={{ marginTop: 18 }}>
           <Link to="/" className="button button-secondary">
-            Back to Home
+            {properties?.common?.buttons?.backToHome || "Back to Home"}
           </Link>
         </div>
       </div>

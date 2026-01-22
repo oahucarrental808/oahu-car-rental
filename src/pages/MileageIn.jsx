@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { buttonStyle, inputStyle, textareaStyle } from "../components/styles";
+import { useProperties } from "../utils/useProperties";
 
 const DEBUG = import.meta.env.VITE_DEBUG_MODE === "true";
 
@@ -11,6 +12,7 @@ function onlyInt(value) {
 }
 
 export default function MileageIn() {
+  const [properties] = useProperties();
   const [params] = useSearchParams();
   const token = params.get("t") || "";
 
@@ -35,19 +37,19 @@ export default function MileageIn() {
     setResult(null);
 
     if (!token) {
-      setError("Missing token.");
+      setError(properties?.mileageIn?.messages?.missingToken || properties?.common?.messages?.missingToken || "Missing token.");
       return;
     }
     if (!mileageIn) {
-      setError("Mileage is required.");
+      setError(properties?.mileageIn?.messages?.mileageRequired || "Mileage is required.");
       return;
     }
     if (!fuelIn) {
-      setError("Fuel level is required.");
+      setError(properties?.mileageIn?.messages?.fuelRequired || "Fuel level is required.");
       return;
     }
     if (!dashboard) {
-      setError("Dashboard photo is required.");
+      setError(properties?.mileageIn?.messages?.dashboardRequired || "Dashboard photo is required.");
       return;
     }
 
@@ -78,7 +80,7 @@ export default function MileageIn() {
     } catch (err) {
       console.error(err);
       setStatus("error");
-      setError(err?.message || "Failed to submit.");
+      setError(err?.message || properties?.mileageIn?.messages?.failed || properties?.common?.messages?.failed || "Failed to submit.");
     }
   }
 
@@ -92,38 +94,43 @@ export default function MileageIn() {
 
   return (
     <div className="intakeWrap">
-      <h1 className="intakeHeader">Mileage & Fuel (Return)</h1>
+      <h1 className="intakeHeader">
+        {properties?.mileageIn?.title || "Mileage & Fuel (Return)"}
+      </h1>
 
       <div className="intakeCard">
         <div style={{ opacity: 0.9, lineHeight: 1.5 }}>
-          Please enter the current mileage and fuel level at return, and upload a clear photo of the
-          dashboard showing both.
+          {properties?.mileageIn?.instructions || "Please enter the current mileage and fuel level at return, and upload a clear photo of the dashboard showing both."}
         </div>
       </div>
 
       <form className="intakeForm" onSubmit={onSubmit}>
         <section className="intakeCard">
-          <h2>Return Details</h2>
+          <h2>{properties?.mileageIn?.sectionTitle || "Return Details"}</h2>
 
           <div className="grid2">
             <div className="fieldRow">
-              <div className="fieldLabel">Mileage (integer)</div>
+              <div className="fieldLabel">
+                {properties?.mileageIn?.labels?.mileage || "Mileage (integer)"}
+              </div>
               <div className="fieldControl">
                 <input
                   style={inputStyle}
                   inputMode="numeric"
                   value={mileageIn}
                   onChange={(e) => setMileageIn(onlyInt(e.target.value))}
-                  placeholder="e.g. 59002"
+                  placeholder={properties?.mileageIn?.placeholders?.mileage || "e.g. 59002"}
                 />
               </div>
             </div>
 
             <div className="fieldRow">
-              <div className="fieldLabel">Fuel Level</div>
+              <div className="fieldLabel">
+                {properties?.mileageIn?.labels?.fuelLevel || "Fuel Level"}
+              </div>
               <div className="fieldControl">
                 <select style={inputStyle} value={fuelIn} onChange={(e) => setFuelIn(e.target.value)}>
-                  <option value="">Select…</option>
+                  <option value="">{properties?.mileageIn?.placeholders?.select || "Select…"}</option>
                   {FUEL_OPTIONS.map((x) => (
                     <option key={x} value={x}>
                       {x}
@@ -135,7 +142,9 @@ export default function MileageIn() {
           </div>
 
           <div className="fieldRow" style={{ marginTop: 12 }}>
-            <div className="fieldLabel">Dashboard Photo</div>
+            <div className="fieldLabel">
+              {properties?.mileageIn?.labels?.dashboardPhoto || "Dashboard Photo"}
+            </div>
             <div className="fieldControl">
               <input
                 type="file"
@@ -150,13 +159,15 @@ export default function MileageIn() {
         </section>
 
         <section className="intakeCard" style={{ marginTop: 20 }}>
-          <h2>Leave a Review (Optional)</h2>
+          <h2>{properties?.mileageIn?.reviewSectionTitle || "Leave a Review (Optional)"}</h2>
           <div style={{ opacity: 0.9, lineHeight: 1.5, marginBottom: 16 }}>
-            We'd love to hear about your experience! Your feedback helps us improve.
+            {properties?.mileageIn?.reviewInstructions || "We'd love to hear about your experience! Your feedback helps us improve."}
           </div>
 
           <div className="fieldRow">
-            <div className="fieldLabel">Rating</div>
+            <div className="fieldLabel">
+              {properties?.mileageIn?.labels?.rating || "Rating"}
+            </div>
             <div className="fieldControl">
               <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
                 {[1, 2, 3, 4, 5].map((star) => (
@@ -190,7 +201,9 @@ export default function MileageIn() {
                 ))}
                 {rating > 0 && (
                   <span style={{ marginLeft: 8, fontSize: 14, opacity: 0.8 }}>
-                    {rating} {rating === 1 ? "star" : "stars"}
+                    {rating} {rating === 1 
+                      ? (properties?.mileageIn?.messages?.star || "star")
+                      : (properties?.mileageIn?.messages?.stars || "stars")}
                   </span>
                 )}
               </div>
@@ -198,17 +211,19 @@ export default function MileageIn() {
           </div>
 
           <div className="fieldRow" style={{ marginTop: 12 }}>
-            <div className="fieldLabel">Your Review</div>
+            <div className="fieldLabel">
+              {properties?.mileageIn?.labels?.review || "Your Review"}
+            </div>
             <div className="fieldControl">
               <textarea
                 style={{ ...textareaStyle, minHeight: "100px" }}
                 value={review}
                 onChange={(e) => setReview(e.target.value)}
-                placeholder="Tell us about your experience..."
+                placeholder={properties?.mileageIn?.placeholders?.review || "Tell us about your experience..."}
                 maxLength={1000}
               />
               <div style={{ marginTop: 6, fontSize: 12, opacity: 0.7, textAlign: "right" }}>
-                {review.length}/1000 characters
+                {review.length}/1000 {properties?.mileageIn?.messages?.characters || "characters"}
               </div>
             </div>
           </div>
@@ -227,24 +242,28 @@ export default function MileageIn() {
               style={{ ...buttonStyle, width: "100%", display: "block" }}
               disabled={status === "submitting"}
             >
-              {status === "submitting" ? "Submitting..." : "Submit Return Info"}
+              {status === "submitting" 
+                ? (properties?.mileageIn?.buttons?.submitting || properties?.common?.buttons?.submitting || "Submitting...")
+                : (properties?.mileageIn?.buttons?.submit || "Submit Return Info")}
             </button>
           </div>
         </section>
 
         {status === "done" ? (
           <section className="intakeCard">
-            <h2>COMPLETED</h2>
+            <h2>{properties?.mileageIn?.messages?.completed || "COMPLETED"}</h2>
 
             <div style={{ opacity: 0.9, lineHeight: 1.5 }}>
-              Thanks — your return mileage and fuel have been recorded.
+              {properties?.mileageIn?.messages?.thanks || "Thanks — your return mileage and fuel have been recorded."}
               <br />
-              You can close this page.
+              {properties?.mileageIn?.messages?.closePage || "You can close this page."}
             </div>
 
             {DEBUG && debugEmailText ? (
               <div style={{ marginTop: 14, textAlign: "left" }}>
-                <div style={{ fontWeight: 900, marginBottom: 8 }}>Debug Email Preview</div>
+                <div style={{ fontWeight: 900, marginBottom: 8 }}>
+                  {properties?.admin?.common?.debugEmailPreview || "Debug Email Preview"}
+                </div>
                 <pre
                   style={{
                     margin: 0,
@@ -260,14 +279,14 @@ export default function MileageIn() {
                 </pre>
                 <div style={{ marginTop: 10 }}>
                   <Link className="button" to="/">
-                    Back to Home
+                    {properties?.mileageIn?.buttons?.backToHome || properties?.common?.buttons?.backToHome || "Back to Home"}
                   </Link>
                 </div>
               </div>
             ) : (
               <div style={{ marginTop: 12 }}>
                 <Link className="button" to="/">
-                  Back to Home
+                  {properties?.mileageIn?.buttons?.backToHome || properties?.common?.buttons?.backToHome || "Back to Home"}
                 </Link>
               </div>
             )}

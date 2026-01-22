@@ -1,5 +1,6 @@
 // src/pages/Gallery.jsx
 import { useMemo } from "react";
+import { useProperties } from "../utils/useProperties";
 import galleryCars from "../data/gallery-cars.json";
 
 const imageModules = import.meta.glob("../assets/gallery/*.{jpg,jpeg,png,webp}", {
@@ -8,6 +9,8 @@ const imageModules = import.meta.glob("../assets/gallery/*.{jpg,jpeg,png,webp}",
 });
 
 export default function Gallery() {
+  const [properties] = useProperties();
+  
   const photosWithData = useMemo(() => {
     const imageEntries = Object.entries(imageModules);
     
@@ -37,10 +40,14 @@ export default function Gallery() {
 
   return (
     <div style={{ width: "min(1100px, 92%)", margin: "0 auto", padding: "28px 0 60px" }}>
-      <h1 style={{ fontSize: "34px", marginBottom: 16 }}>Gallery</h1>
+      <h1 style={{ fontSize: "34px", marginBottom: 16 }}>
+        {properties?.gallery?.title || "Gallery"}
+      </h1>
 
       {photosWithData.length === 0 ? (
-        <p style={{ opacity: 0.7 }}>No photos available.</p>
+        <p style={{ opacity: 0.7 }}>
+          {properties?.gallery?.noPhotos || "No photos available."}
+        </p>
       ) : (
         <div className="gallery-grid">
           {photosWithData.map((photo, i) => {

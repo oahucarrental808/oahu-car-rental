@@ -2,13 +2,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { buttonStyle, inputStyle } from "../components/styles";
+import { useProperties } from "../utils/useProperties";
 
 /* -------------------- constants -------------------- */
 
 const DEBUG = import.meta.env.VITE_DEBUG_MODE === "true";
-
-const TRACKER_NOTICE =
-  "Each of our vehicles is equipped with GPS tracking. Any attempt to tamper with or disable the tracking device voids the rental agreement, and the vehicle may be reported stolen.";
 
 const US_STATES = [
   { value: "AL", label: "AL — Alabama" },
@@ -193,6 +191,7 @@ function FilePicker({
 /* -------------------- page -------------------- */
 
 export default function AdminCustomerInfo() {
+  const [properties] = useProperties();
   const [params] = useSearchParams();
   const token = params.get("t") || "";
 
@@ -1010,7 +1009,9 @@ export default function AdminCustomerInfo() {
               }}
             >
               <div style={{ fontWeight: 800, marginBottom: 6 }}>Vehicle Tracking Notice</div>
-              <div style={{ opacity: 0.9, lineHeight: 1.45 }}>{TRACKER_NOTICE}</div>
+              <div style={{ opacity: 0.9, lineHeight: 1.45 }}>
+                {properties?.notices?.trackerNotice || "Each of our vehicles is equipped with GPS tracking. Any attempt to tamper with or disable the tracking device voids the rental agreement, and the vehicle may be reported stolen."}
+              </div>
             </div>
 
             <div style={{ height: 8 }} />
