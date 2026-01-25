@@ -8,17 +8,19 @@ import { publicCors } from "./common/cors.js";
 import { getSheetsClient } from "./common/google.js";
 import { isValidDateString } from "./common/validate.js";
 import { sendEmail } from "./common/email.js";
+import { sendSMS, formatPhoneNumber } from "./common/sms.js";
 
 // ✅ Your sheet info
 const SHEET_ID = "1jTbHW-j-agj00ovF4amuPpPy7ksFAirSoATWLDntR-c";
 const SHEET_TAB = "Incoming Requests";
 
 const ADMIN_EMAIL = defineSecret("ADMIN_EMAIL");
+const ADMIN_NUMBER = defineSecret("ADMIN_NUMBER");
 const SMTP_EMAIL = defineSecret("SMTP_EMAIL");
 const SMTP_PASSWORD = defineSecret("SMTP_PASSWORD");
 
 export const submitRequest = onRequest(
-  { region: "us-central1", secrets: [ADMIN_EMAIL, SMTP_EMAIL, SMTP_PASSWORD] },
+  { region: "us-central1", secrets: [ADMIN_EMAIL, ADMIN_NUMBER, SMTP_EMAIL, SMTP_PASSWORD] },
   (req, res) =>
     publicCors(req, res, async () => {
       try {
@@ -80,9 +82,10 @@ export const submitRequest = onRequest(
           requestBody: { values },
         });
 
-        // Send email notification to admin
+        // Send email and SMS notifications to admin
         const debug = String(process.env.DEBUG_MODE || "").toLowerCase() === "true";
         if (!debug) {
+          // Send email notification
           try {
             const adminEmailAddress = ADMIN_EMAIL.value();
             if (adminEmailAddress) {
@@ -120,6 +123,42 @@ export const submitRequest = onRequest(
             // Log error but don't fail the request - request was still saved
             logger.error("Failed to send new request notification email", {
               error: emailError.message,
+              requestId: id,
+            });
+          }
+
+          // Send SMS notification
+          try {
+            const adminPhoneNumber = ADMIN_NUMBER.value();
+            if (adminPhoneNumber) {
+              const formattedNumber = formatPhoneNumber(adminPhoneNumber);
+              if (formattedNumber) {
+                // Create a concise SMS message (SMS has 160 character limit, but we'll keep it brief)
+                const smsMessage = [
+                  `New rental request: ${name}`,
+                  `${startDate} to ${endDate}`,
+                  carTypes.length > 0 ? `Car: ${carTypes.join(", ")}` : "",
+                  `$${minPrice}-$${maxPrice}/day`,
+                  notes ? `Note: ${notes.substring(0, 50)}${notes.length > 50 ? "..." : ""}` : "",
+                ]
+                  .filter(Boolean)
+                  .join("\n");
+
+                await sendSMS({
+                  to: formattedNumber,
+                  message: smsMessage,
+                });
+
+                logger.info("New request notification SMS sent to admin", {
+                  adminNumber: formattedNumber,
+                  requestId: id,
+                });
+              }
+            }
+          } catch (smsError) {
+            // Log error but don't fail the request - request was still saved
+            logger.error("Failed to send new request notification SMS", {
+              error: smsError.message,
               requestId: id,
             });
           }

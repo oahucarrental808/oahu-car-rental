@@ -336,6 +336,17 @@ button:disabled {
   border-radius: 12px;
   background: rgba(255,255,255,0.95);
   border: 1px solid var(--border);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+}
+
+.menu-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .menu-bar {
@@ -374,9 +385,6 @@ button:disabled {
     padding: 10px 14px;
     border-width: 2px;
     border-color: var(--primary);
-    display: flex;
-    align-items: center;
-    gap: 8px;
   }
   
   .menu-text {

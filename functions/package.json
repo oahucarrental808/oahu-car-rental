@@ -11,7 +11,8 @@
     "lint": "eslint .",
     "serve": "firebase emulators:start --only functions",
     "deploy": "firebase deploy --only functions",
-    "logs": "firebase functions:log"
+    "logs": "firebase functions:log",
+    "update-contract": "node scripts/update-contract-template.js"
   },
   "dependencies": {
     "@fastify/busboy": "^3.2.0",

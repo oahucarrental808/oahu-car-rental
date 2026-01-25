@@ -67,29 +67,24 @@ export default function Gallery() {
             const altText = carInfo || `Gallery ${i + 1}`;
             
             return (
-              <div key={i} style={{ position: "relative" }}>
+              <div key={i} style={{ display: "flex", flexDirection: "column" }}>
                 <img
                   src={photo.src}
                   alt={altText}
                   className="gallery-img"
                   loading="lazy"
                 />
-                {(photo.year || photo.make || photo.model || photo.license) && (
-                  <div style={{
-                    position: "absolute",
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    background: "linear-gradient(to top, rgba(0,0,0,0.7), transparent)",
-                    padding: "12px",
-                    borderRadius: "0 0 16px 16px",
-                    color: "white",
-                    fontSize: "13px",
-                    fontWeight: 600
-                  }}>
-                    {carInfo}
-                  </div>
-                )}
+                <div style={{
+                  marginTop: "8px",
+                  padding: "8px 0",
+                  color: "var(--text)",
+                  fontSize: "14px",
+                  fontWeight: 500,
+                  lineHeight: 1.4,
+                  minHeight: "20px"
+                }}>
+                  {carInfo || <span style={{ opacity: 0.6, fontStyle: "italic" }}>No information available</span>}
+                </div>
               </div>
             );
           })}

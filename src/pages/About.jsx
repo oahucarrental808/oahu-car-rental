@@ -16,7 +16,7 @@ export default function About() {
       </div>
       <div style={{ opacity: 0.9, lineHeight: 1.8 }}>
         <div style={{ marginBottom: "8px" }}>
-          <strong>{properties?.about?.emailLabel || "Email:"}</strong> <a href="mailto:info@oahucarrentals.com" style={{ color: "var(--primary)" }}>info@oahucarrentals.com</a>
+          <strong>{properties?.about?.emailLabel || "Email:"}</strong> <a href="mailto:oahucarrentals@hotmail.com" style={{ color: "var(--primary)" }}>oahucarrentals@hotmail.com</a>
         </div>
         <div>
           <strong>{properties?.about?.phoneLabel || "Phone:"}</strong> <a href="tel:+18081234567" style={{ color: "var(--primary)" }}>(808) 123-4567</a>

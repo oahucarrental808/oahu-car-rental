@@ -7,6 +7,7 @@ import { useProperties } from "../utils/useProperties";
 import reviews from "../data/reviews.json";
 
 import heroImg from "../assets/hero.jpg";
+import suvImg from "../assets/suv.jpg";
 
 
 export default function Home() {
@@ -51,9 +52,6 @@ export default function Home() {
             <div style={{ fontSize: "14px", letterSpacing: "0.08em", opacity: 0.9 }}>
               {properties?.brand?.name || "OAHU CAR RENTALS"}
             </div>
-            <div style={{ fontSize: "12px", opacity: 0.85, marginTop: "4px" }}>
-              Established {properties?.brand?.established || "June 1st, 2020"}
-            </div>
 
             <h1 style={{ fontSize: "44px", lineHeight: 1.1, margin: "10px 0 14px" }}>
               {properties?.brand?.tagline || "Simple, fast car rentals on Oʻahu"}
@@ -65,6 +63,24 @@ export default function Home() {
 
             <div style={{ marginTop: 14, fontSize: 14, opacity: 0.9, maxWidth: "52ch" }}>
               {properties?.home?.referralText || properties?.faq?.answers?.referralBonuses || "We offer referral bonuses for connecting us with renters or buyers—send them our way and we'll take care of the rest."}
+            </div>
+
+            <img 
+              src={suvImg} 
+              alt="Jeep" 
+              style={{ 
+                width: "100%", 
+                maxWidth: "100%",
+                height: "auto", 
+                borderRadius: "8px",
+                border: "1px solid rgba(255,255,255,0.3)",
+                display: "block",
+                marginTop: "20px"
+              }} 
+            />
+
+            <div style={{ fontSize: "12px", opacity: 0.85, marginTop: "8px" }}>
+              Established {properties?.brand?.established || "June 1st, 2020"}
             </div>
           </div>
 

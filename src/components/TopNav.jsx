@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { useProperties } from "../utils/useProperties";
-import suvImg from "../assets/suv.jpg";
 
 export default function TopNav() {
   const [properties] = useProperties();
@@ -23,21 +22,10 @@ export default function TopNav() {
   return (
     <div className="topnav">
       <div className="topnav-inner">
-        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+        <div>
           <Link to="/" className="topnav-brand">
             {properties?.brand?.name || "Oahu Car Rentals"}
           </Link>
-          <img 
-            src={suvImg} 
-            alt="Jeep" 
-            style={{ 
-              width: "120px", 
-              height: "auto", 
-              borderRadius: "8px",
-              border: "1px solid var(--border)",
-              display: "block"
-            }} 
-          />
         </div>
 
         <div className="topnav-right">
@@ -50,9 +38,11 @@ export default function TopNav() {
               className="menu-button"
               type="button"
             >
-              <span className="menu-bar" />
-              <span className="menu-bar" />
-              <span className="menu-bar" />
+              <div className="menu-bars">
+                <span className="menu-bar" />
+                <span className="menu-bar" />
+                <span className="menu-bar" />
+              </div>
               <span className="menu-text">{properties?.navigation?.menu || "Menu"}</span>
             </button>
 
