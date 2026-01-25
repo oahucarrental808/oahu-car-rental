@@ -8,10 +8,12 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { Readable } from "node:stream";
 import { google } from "googleapis";
+import { getFirestore } from "firebase-admin/firestore";
 import { adminCors } from "./common/cors.js";
 import { mustString, isValidDateString } from "./common/validate.js";
 import { CONTRACT_COORDS } from "./pdfCoordinates.js";
 import { sendEmail } from "./common/email.js";
+import { sendPickupReminderIfNeeded } from "./sendAdminReminders.js";
 
 /* ------------------------------------------------------------------ */
 /* Secrets                                                            */
@@ -25,6 +27,7 @@ const OAUTH_REDIRECT_URI = defineSecret("OAUTH_REDIRECT_URI");
 const DRIVE_REFRESH_TOKEN = defineSecret("DRIVE_REFRESH_TOKEN");
 const SMTP_EMAIL = defineSecret("SMTP_EMAIL");
 const SMTP_PASSWORD = defineSecret("SMTP_PASSWORD");
+const ADMIN_EMAIL = defineSecret("ADMIN_EMAIL");
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                            */
@@ -246,6 +249,7 @@ export const createRentalPackage = onRequest(
       DRIVE_REFRESH_TOKEN,
       SMTP_EMAIL,
       SMTP_PASSWORD,
+      ADMIN_EMAIL,
     ],
   },
   (req, res) =>
@@ -528,6 +532,45 @@ export const createRentalPackage = onRequest(
         const adminDropoffInstructionsUrl = `https://oahu-car-rentals.web.app/admin/dropoff-instructions?t=${encodeURIComponent(
           adminDropoffToken
         )}`;
+
+        // Store rental data in Firestore for scheduled reminders
+        let pickupReminderSent = false;
+        try {
+          const db = getFirestore();
+          const rentalData = {
+            vin,
+            make,
+            model,
+            color,
+            licensePlate,
+            startDate,
+            endDate,
+            customerEmail,
+            folderId: folder.id,
+            adminPickupInstructionsUrl,
+            adminDropoffInstructionsUrl,
+            createdAt,
+            pickupReminderSent: false,
+            dropoffReminderSent: false,
+          };
+          await db.collection("rentals").doc(folder.id).set(rentalData);
+          logger.info("Rental data stored in Firestore", { folderId: folder.id });
+
+          // Send immediate pickup reminder if pickup is within 3 days
+          pickupReminderSent = await sendPickupReminderIfNeeded(rentalData, ADMIN_EMAIL.value());
+          if (pickupReminderSent) {
+            await db.collection("rentals").doc(folder.id).update({
+              pickupReminderSent: true,
+              pickupReminderSentAt: new Date().toISOString(),
+            });
+          }
+        } catch (firestoreError) {
+          // Log error but don't fail the request - package was still created
+          logger.error("Failed to store rental data in Firestore", {
+            folderId: folder.id,
+            error: firestoreError.message,
+          });
+        }
 
         const debug = String(process.env.DEBUG_MODE || "").toLowerCase() === "true";
 

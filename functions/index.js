@@ -17,6 +17,7 @@ export { decodeAdminInstructionLink } from "./src/decodeAdminInstructionLink.js"
 export { createPickupMileageLink } from "./src/createPickupMileageLink.js";
 export { createDropoffMileageLink } from "./src/createDropoffMileageLink.js";
 export { submitSignedContract } from "./src/submitSignedContract.js";
+export { sendAdminReminders } from "./src/sendAdminReminders.js";
 
 // from secrets
 const CLIENT_ID = process.env.OAUTH_CLIENT_ID;
