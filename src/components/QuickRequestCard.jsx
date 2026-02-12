@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { buttonStyle, inputStyle, labelStyle, textareaStyle } from "./styles";
 import { useProperties } from "../utils/useProperties";
+import { isValidDateString, isValidDateRange, isDateNotInPast } from "../utils/validation.js";
 
 
 const CAR_TYPE_OPTIONS = [
@@ -47,14 +48,22 @@ export default function QuickRequestCard({ title = "Request", subtitle, onSucces
     const formStartDate = form.get("startDate");
     const formEndDate = form.get("endDate");
     
-    // Validate dates
-    if (formStartDate && formEndDate) {
-      const start = new Date(formStartDate);
-      const end = new Date(formEndDate);
-      if (end <= start) {
-        setStatus("error");
-        return;
-      }
+    // Validate dates using shared validation
+    if (formStartDate && !isValidDateString(formStartDate)) {
+      setStatus("error");
+      return;
+    }
+    if (formEndDate && !isValidDateString(formEndDate)) {
+      setStatus("error");
+      return;
+    }
+    if (formStartDate && formEndDate && !isValidDateRange(formStartDate, formEndDate)) {
+      setStatus("error");
+      return;
+    }
+    if (formStartDate && !isDateNotInPast(formStartDate)) {
+      setStatus("error");
+      return;
     }
     
     setStatus("sending");
@@ -71,15 +80,23 @@ export default function QuickRequestCard({ title = "Request", subtitle, onSucces
     };
   
     try {
-      const FUNCTION_URL =
-        "https://us-central1-oahu-car-rentals.cloudfunctions.net/submitRequest";
-  
+      // Use relative URL via proxy (configured in firebase.json)
+      const FUNCTION_URL = "/api/submitRequest";
+
       const resp = await fetch(FUNCTION_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
   
+      // Check if response is JSON before parsing
+      const contentType = resp.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        const text = await resp.text();
+        console.error("Non-JSON response received:", text.substring(0, 200));
+        throw new Error("Server returned an invalid response. Please try again later.");
+      }
+
       const data = await resp.json();
       if (!resp.ok || !data.ok) throw new Error(data.error || "Request failed");
   

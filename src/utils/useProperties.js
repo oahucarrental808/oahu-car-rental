@@ -1,40 +1,31 @@
-import { useEffect, useState } from 'react';
+import { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { loadProperties } from './properties';
 
 /**
- * React hook to load and use properties
+ * React hook to load and use properties using React Query
  * Returns [properties, loading, error]
  */
 export function useProperties() {
-  const [properties, setProperties] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { data: properties, isLoading: loading, error } = useQuery({
+    queryKey: ['properties'],
+    queryFn: loadProperties,
+    staleTime: 10 * 60 * 1000, // 10 minutes - properties don't change often
+  });
 
-  useEffect(() => {
-    loadProperties()
-      .then(props => {
-        setProperties(props);
-        setLoading(false);
-      })
-      .catch(err => {
-        setError(err);
-        setLoading(false);
-      });
-  }, []);
-
-  return [properties, loading, error];
+  return [properties || null, loading, error || null];
 }
 
 /**
- * React hook to get a specific property value
+ * React hook to get a specific property value using derived state
  * Returns [value, loading, error]
  */
 export function useProperty(path, defaultValue = '') {
   const [properties, loading, error] = useProperties();
-  const [value, setValue] = useState(defaultValue);
 
-  useEffect(() => {
-    if (!properties) return;
+  // Use useMemo to derive the value from properties
+  const value = useMemo(() => {
+    if (!properties) return defaultValue;
     
     const keys = path.split('.');
     let val = properties;
@@ -43,12 +34,11 @@ export function useProperty(path, defaultValue = '') {
       if (val && typeof val === 'object' && key in val) {
         val = val[key];
       } else {
-        setValue(defaultValue);
-        return;
+        return defaultValue;
       }
     }
     
-    setValue(val || defaultValue);
+    return val || defaultValue;
   }, [properties, path, defaultValue]);
 
   return [value, loading, error];

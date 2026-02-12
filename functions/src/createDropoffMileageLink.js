@@ -4,8 +4,15 @@ import { logger } from "firebase-functions";
 import cors from "cors";
 import crypto from "node:crypto";
 import { sendEmail } from "./common/email.js";
+import { getUrl, isDebugMode } from "./common/config.js";
 
 const LINK_SECRET = defineSecret("LINK_SECRET");
+// Provider-specific secrets
+const SMTP_EMAIL_GMAIL = defineSecret("SMTP_EMAIL_GMAIL");
+const SMTP_PASSWORD_GMAIL = defineSecret("SMTP_PASSWORD_GMAIL");
+const SMTP_EMAIL_OUTLOOK = defineSecret("SMTP_EMAIL_OUTLOOK");
+const SMTP_PASSWORD_OUTLOOK = defineSecret("SMTP_PASSWORD_OUTLOOK");
+// Legacy secrets (for backward compatibility)
 const SMTP_EMAIL = defineSecret("SMTP_EMAIL");
 const SMTP_PASSWORD = defineSecret("SMTP_PASSWORD");
 
@@ -58,7 +65,18 @@ function encrypt(payloadObj, secret) {
 }
 
 export const createDropoffMileageLink = onRequest(
-  { region: "us-central1", secrets: [LINK_SECRET, SMTP_EMAIL, SMTP_PASSWORD] },
+  { 
+    region: "us-central1", 
+    secrets: [
+      LINK_SECRET, 
+      SMTP_EMAIL_GMAIL, 
+      SMTP_PASSWORD_GMAIL, 
+      SMTP_EMAIL_OUTLOOK, 
+      SMTP_PASSWORD_OUTLOOK,
+      SMTP_EMAIL, 
+      SMTP_PASSWORD
+    ] 
+  },
   (req, res) =>
     corsHandler(req, res, async () => {
       try {
@@ -102,11 +120,32 @@ export const createDropoffMileageLink = onRequest(
           LINK_SECRET.value()
         );
 
-        const mileageInUrl = `https://oahu-car-rentals.web.app/mileageIn?t=${encodeURIComponent(
+        const mileageInUrl = getUrl(`/mileage-in?t=${encodeURIComponent(
           mileageInToken
-        )}`;
+        )}`);
 
-        const debug = String(process.env.DEBUG_MODE || "").toLowerCase() === "true";
+        const debug = isDebugMode();
+
+        // Build email content with all dropoff information
+        const emailBody = [
+          "Dropoff instructions:",
+          instructions || "(none)",
+          "",
+          "When you return the car, please submit final mileage, fuel level, and a dashboard photo using this link:",
+          "",
+          `Submit Return Information: ${mileageInUrl}`,
+          "",
+          "— Oahu Car Rentals",
+        ].join("\n");
+
+        // Build HTML version of email
+        const emailHtml = [
+          "<p><strong>Dropoff instructions:</strong></p>",
+          `<p>${(instructions || "(none)").replace(/\n/g, "<br>")}</p>`,
+          "<p>When you return the car, please submit final mileage, fuel level, and a dashboard photo using this link:</p>",
+          `<p><a href="${mileageInUrl}" style="color: #1f6fc1; text-decoration: underline;">Submit Return Information</a></p>`,
+          "<p>— Oahu Car Rentals</p>",
+        ].join("");
 
         if (debug) {
           return res.status(200).json({
@@ -114,16 +153,8 @@ export const createDropoffMileageLink = onRequest(
             mileageInUrl,
             debugEmail: {
               to: customerEmail,
-              subject: "Dropoff instructions + return checklist",
-              body: [
-                "Dropoff instructions:",
-                instructions || "(none)",
-                "",
-                "When you return the car, please submit final mileage, fuel level, and a dashboard photo using this link:",
-                mileageInUrl,
-                "",
-                "— Oahu Car Rentals",
-              ].join("\n"),
+              subject: "Dropoff Instructions + Return Checklist - Oahu Car Rentals",
+              body: emailBody,
             },
           });
         }
@@ -133,15 +164,8 @@ export const createDropoffMileageLink = onRequest(
           await sendEmail({
             to: customerEmail,
             subject: "Dropoff Instructions + Return Checklist - Oahu Car Rentals",
-            text: [
-              "Dropoff instructions:",
-              instructions || "(none)",
-              "",
-              "When you return the car, please submit final mileage, fuel level, and a dashboard photo using this link:",
-              mileageInUrl,
-              "",
-              "— Oahu Car Rentals",
-            ].join("\n"),
+            text: emailBody,
+            html: emailHtml,
           });
           logger.info("Dropoff instructions email sent", { email: customerEmail });
         } catch (emailError) {

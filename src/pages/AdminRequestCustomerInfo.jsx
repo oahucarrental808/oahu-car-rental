@@ -2,8 +2,7 @@
 import { useMemo, useState } from "react";
 import AdminGate from "../components/AdminGate";
 import { useProperties } from "../utils/useProperties";
-
-const DEBUG = import.meta.env.VITE_DEBUG_MODE === "true";
+import { useDebugMode } from "../utils/useDebugMode";
 
 function onlyInt(value) {
   return String(value || "").replace(/\D/g, "");
@@ -17,6 +16,7 @@ function formatCostPerDay(intStr) {
 
 export default function AdminRequestCustomerInfo() {
   const [properties] = useProperties();
+  const { debug: DEBUG } = useDebugMode();
   const [v, setV] = useState({
     vin: "",
     color: "",
@@ -87,10 +87,25 @@ export default function AdminRequestCustomerInfo() {
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) throw new Error(await res.text());
+      if (!res.ok) {
+        const errorText = await res.text();
+        let errorMessage = errorText;
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.error || errorJson.message || errorText;
+        } catch {
+          // If it's not JSON, use the text as-is
+        }
+        throw new Error(errorMessage);
+      }
 
       const out = await res.json();
-      setCreatedLink(out.url);
+      // Handle both response structures: { ok: true, url } and { ok: true, data: { url } }
+      const linkUrl = out.data?.url || out.url;
+      if (!linkUrl) {
+        throw new Error("Response missing URL. Response: " + JSON.stringify(out));
+      }
+      setCreatedLink(linkUrl);
       setStatus("idle");
 
       // TODO (non-debug): send email to customerEmail with out.url and start scheduler

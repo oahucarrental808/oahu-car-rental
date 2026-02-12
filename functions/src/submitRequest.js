@@ -9,6 +9,7 @@ import { getSheetsClient } from "./common/google.js";
 import { isValidDateString } from "./common/validate.js";
 import { sendEmail } from "./common/email.js";
 import { sendSMS, formatPhoneNumber } from "./common/sms.js";
+import { isDebugMode } from "./common/config.js";
 
 // ✅ Your sheet info
 const SHEET_ID = "1jTbHW-j-agj00ovF4amuPpPy7ksFAirSoATWLDntR-c";
@@ -16,11 +17,29 @@ const SHEET_TAB = "Incoming Requests";
 
 const ADMIN_EMAIL = defineSecret("ADMIN_EMAIL");
 const ADMIN_NUMBER = defineSecret("ADMIN_NUMBER");
+// Provider-specific secrets
+const SMTP_EMAIL_GMAIL = defineSecret("SMTP_EMAIL_GMAIL");
+const SMTP_PASSWORD_GMAIL = defineSecret("SMTP_PASSWORD_GMAIL");
+const SMTP_EMAIL_OUTLOOK = defineSecret("SMTP_EMAIL_OUTLOOK");
+const SMTP_PASSWORD_OUTLOOK = defineSecret("SMTP_PASSWORD_OUTLOOK");
+// Legacy secrets (for backward compatibility)
 const SMTP_EMAIL = defineSecret("SMTP_EMAIL");
 const SMTP_PASSWORD = defineSecret("SMTP_PASSWORD");
 
 export const submitRequest = onRequest(
-  { region: "us-central1", secrets: [ADMIN_EMAIL, ADMIN_NUMBER, SMTP_EMAIL, SMTP_PASSWORD] },
+  { 
+    region: "us-central1", 
+    secrets: [
+      ADMIN_EMAIL, 
+      ADMIN_NUMBER, 
+      SMTP_EMAIL_GMAIL, 
+      SMTP_PASSWORD_GMAIL, 
+      SMTP_EMAIL_OUTLOOK, 
+      SMTP_PASSWORD_OUTLOOK,
+      SMTP_EMAIL, 
+      SMTP_PASSWORD
+    ] 
+  },
   (req, res) =>
     publicCors(req, res, async () => {
       try {
@@ -83,7 +102,12 @@ export const submitRequest = onRequest(
         });
 
         // Send email and SMS notifications to admin
-        const debug = String(process.env.DEBUG_MODE || "").toLowerCase() === "true";
+        const debug = isDebugMode();
+        if (debug) {
+          logger.info("Debug mode enabled - skipping email and SMS notifications", {
+            requestId: id,
+          });
+        }
         if (!debug) {
           // Send email notification
           try {
@@ -123,6 +147,7 @@ export const submitRequest = onRequest(
             // Log error but don't fail the request - request was still saved
             logger.error("Failed to send new request notification email", {
               error: emailError.message,
+              stack: emailError.stack,
               requestId: id,
             });
           }
@@ -130,9 +155,18 @@ export const submitRequest = onRequest(
           // Send SMS notification
           try {
             const adminPhoneNumber = ADMIN_NUMBER.value();
-            if (adminPhoneNumber) {
+            if (!adminPhoneNumber) {
+              logger.warn("SMS not sent: ADMIN_NUMBER secret is not set or empty", {
+                requestId: id,
+              });
+            } else {
               const formattedNumber = formatPhoneNumber(adminPhoneNumber);
-              if (formattedNumber) {
+              if (!formattedNumber) {
+                logger.error("SMS not sent: Failed to format phone number", {
+                  adminPhoneNumber,
+                  requestId: id,
+                });
+              } else {
                 // Create a concise SMS message (SMS has 160 character limit, but we'll keep it brief)
                 const smsMessage = [
                   `New rental request: ${name}`,
@@ -159,6 +193,7 @@ export const submitRequest = onRequest(
             // Log error but don't fail the request - request was still saved
             logger.error("Failed to send new request notification SMS", {
               error: smsError.message,
+              stack: smsError.stack,
               requestId: id,
             });
           }

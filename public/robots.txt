@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /mileage-out
+Disallow: /mileage-in
+Disallow: /signed-contract
+Disallow: /submission-success
+Disallow: /success
+Disallow: /request/success
+
+# Sitemap
+# IMPORTANT: Update the domain URL below to match your actual production domain
+Sitemap: https://oahu-car-rentals.com/sitemap.xml

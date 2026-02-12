@@ -10,6 +10,7 @@ import { sendEmail } from "./email.js";
  */
 const CARRIER_GATEWAYS = {
   "tmobile": "@tmomail.net",
+  "spectrum": "@mypixmessages.com",
   "t-mobile": "@tmomail.net",
   "att": "@txt.att.net",
   "at&t": "@txt.att.net",
@@ -22,14 +23,14 @@ const CARRIER_GATEWAYS = {
   "boostmobile": "@sms.myboostmobile.com",
   "virgin": "@vmobl.com",
   "virginmobile": "@vmobl.com",
-  "google": "@tmomail.net", // Google Fi uses T-Mobile network
-  "googlefi": "@tmomail.net",
-  "google-fi": "@tmomail.net",
-  "fi": "@tmomail.net",
+  "google": "@msg.fi.google.com", // Google Fi uses T-Mobile network
+  "googlefi": "@msg.fi.google.com",
+  "google-fi": "@msg.fi.google.com",
+  "fi": "@msg.fi.google.com"
 };
 
 // Default to T-Mobile if not specified
-const DEFAULT_CARRIER = "tmobile";
+const DEFAULT_CARRIER = "spectrum";
 
 // Optional: override default carrier via secret
 // Note: If using this secret, add ADMIN_CARRIER to the function's secrets array
@@ -108,9 +109,10 @@ export async function sendSMS({ to, message, carrier = null }) {
     }
 
     // Send email to SMS gateway
+    // Note: SMS gateways ignore subject, but sendEmail requires a non-empty subject
     const result = await sendEmail({
       to: emailAddress,
-      subject: "", // SMS gateways ignore subject
+      subject: "SMS", // SMS gateways ignore subject, but required for validation
       text: message,
     });
 

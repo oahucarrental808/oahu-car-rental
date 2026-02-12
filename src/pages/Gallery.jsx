@@ -1,7 +1,10 @@
 // src/pages/Gallery.jsx
 import { useMemo } from "react";
 import { useProperties } from "../utils/useProperties";
+import SEO from "../components/SEO";
 import galleryCars from "../data/gallery-cars.json";
+import heroImg from "../assets/hero.jpg";
+import { container } from "../components/styles";
 
 const imageModules = import.meta.glob("../assets/gallery/*.{jpg,jpeg,png,webp}", {
   eager: true,
@@ -39,10 +42,27 @@ export default function Gallery() {
   }, []);
 
   return (
+    <>
+      <SEO
+        title={`${properties?.gallery?.title || "Car Rental Fleet Gallery"} - ${properties?.brand?.name || "Oahu Car Rentals"} | View Our Vehicles in Honolulu, HI`}
+        description={`Browse our complete fleet of rental vehicles available on Oʻahu. View photos of our clean, well-maintained cars, SUVs, and vans. Find the perfect vehicle for your Hawaii adventure.`}
+        keywords="Oahu car rental fleet, Honolulu car rental vehicles, Hawaii rental car gallery, Oahu rental car photos, car rental Oahu inventory, Oahu SUV rental, Oahu van rental, rental car fleet Honolulu"
+        image={heroImg}
+      />
+      {/* HERO */}
+      <header className="hero">
+        <div
+          className="hero-bg"
+          style={{ backgroundImage: `url(${heroImg})` }}
+          aria-label="Oahu Car Rentals - Beautiful Oahu landscape background"
+        />
+        <div className="hero-content" style={{ ...container, gridTemplateColumns: "1fr", textAlign: "center" }}>
+          <h1 style={{ fontSize: "44px", lineHeight: 1.1, margin: "10px 0 14px" }}>
+            {properties?.gallery?.title || "Gallery"}
+          </h1>
+        </div>
+      </header>
     <div style={{ width: "min(1100px, 92%)", margin: "0 auto", padding: "28px 0 60px" }}>
-      <h1 style={{ fontSize: "34px", marginBottom: 16 }}>
-        {properties?.gallery?.title || "Gallery"}
-      </h1>
 
       {photosWithData.length === 0 ? (
         <p style={{ opacity: 0.7 }}>
@@ -64,7 +84,9 @@ export default function Gallery() {
             if (photo.license) parts.push(photo.license);
             
             const carInfo = parts.join(" ");
-            const altText = carInfo || `Gallery ${i + 1}`;
+            const altText = carInfo 
+              ? `${carInfo} - Oahu Car Rentals rental vehicle available for rent on Oahu`
+              : `Rental vehicle ${i + 1} - Oahu Car Rentals fleet`;
             
             return (
               <div key={i} style={{ display: "flex", flexDirection: "column" }}>
@@ -91,5 +113,6 @@ export default function Gallery() {
         </div>
       )}
     </div>
+    </>
   );
 }

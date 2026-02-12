@@ -4,8 +4,15 @@ import { logger } from "firebase-functions";
 import cors from "cors";
 import crypto from "node:crypto";
 import { sendEmail } from "./common/email.js";
+import { getUrl, isDebugMode } from "./common/config.js";
 
 const LINK_SECRET = defineSecret("LINK_SECRET");
+// Provider-specific secrets
+const SMTP_EMAIL_GMAIL = defineSecret("SMTP_EMAIL_GMAIL");
+const SMTP_PASSWORD_GMAIL = defineSecret("SMTP_PASSWORD_GMAIL");
+const SMTP_EMAIL_OUTLOOK = defineSecret("SMTP_EMAIL_OUTLOOK");
+const SMTP_PASSWORD_OUTLOOK = defineSecret("SMTP_PASSWORD_OUTLOOK");
+// Legacy secrets (for backward compatibility)
 const SMTP_EMAIL = defineSecret("SMTP_EMAIL");
 const SMTP_PASSWORD = defineSecret("SMTP_PASSWORD");
 
@@ -62,7 +69,18 @@ function mustString(v) {
 }
 
 export const createPickupMileageLink = onRequest(
-  { region: "us-central1", secrets: [LINK_SECRET, SMTP_EMAIL, SMTP_PASSWORD] },
+  { 
+    region: "us-central1", 
+    secrets: [
+      LINK_SECRET, 
+      SMTP_EMAIL_GMAIL, 
+      SMTP_PASSWORD_GMAIL, 
+      SMTP_EMAIL_OUTLOOK, 
+      SMTP_PASSWORD_OUTLOOK,
+      SMTP_EMAIL, 
+      SMTP_PASSWORD
+    ] 
+  },
   (req, res) =>
     corsHandler(req, res, async () => {
       try {
@@ -112,11 +130,11 @@ export const createPickupMileageLink = onRequest(
           LINK_SECRET.value()
         );
 
-        const mileageOutUrl = `https://oahu-car-rentals.web.app/mileageOut?t=${encodeURIComponent(
+        const mileageOutUrl = getUrl(`/mileage-out?t=${encodeURIComponent(
           mileageOutToken
-        )}`;
+        )}`);
 
-        const debug = String(process.env.DEBUG_MODE || "").toLowerCase() === "true";
+        const debug = isDebugMode();
 
         // Build email content with all pickup information
         const emailLines = [
@@ -141,12 +159,37 @@ export const createPickupMileageLink = onRequest(
           "BEFORE YOU DRIVE OFF:",
           "",
           "Please submit your pickup mileage, fuel level, and a dashboard photo using this link:",
-          mileageOutUrl,
+          "",
+          `Submit Pickup Information: ${mileageOutUrl}`,
           "",
           "— Oahu Car Rentals"
         );
 
         const emailBody = emailLines.join("\n");
+
+        // Build HTML version of email
+        const emailHtml = [
+          "<p>Thanks for renting with Oahu Car Rentals.</p>",
+          "<p><strong>PICKUP INFORMATION:</strong></p>",
+        ];
+
+        if (address) {
+          emailHtml.push(`<p><strong>Pickup Address:</strong> ${address}</p>`);
+        }
+
+        if (instructions) {
+          emailHtml.push(`<p><strong>Pickup Instructions:</strong></p>`);
+          emailHtml.push(`<p>${instructions.replace(/\n/g, "<br>")}</p>`);
+        }
+
+        emailHtml.push(
+          "<p><strong>BEFORE YOU DRIVE OFF:</strong></p>",
+          "<p>Please submit your pickup mileage, fuel level, and a dashboard photo using this link:</p>",
+          `<p><a href="${mileageOutUrl}" style="color: #1f6fc1; text-decoration: underline;">Submit Pickup Information</a></p>`,
+          "<p>— Oahu Car Rentals</p>"
+        );
+
+        const emailHtmlBody = emailHtml.join("");
 
         if (debug) {
           return res.json({
@@ -166,6 +209,7 @@ export const createPickupMileageLink = onRequest(
             to: customerEmail,
             subject: "Pickup Instructions - Oahu Car Rentals",
             text: emailBody,
+            html: emailHtmlBody,
           });
           logger.info("Pickup instructions email sent", { email: customerEmail });
         } catch (emailError) {

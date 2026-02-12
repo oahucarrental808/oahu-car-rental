@@ -1,18 +1,24 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useProperties } from "../utils/useProperties";
-
-const DEBUG = import.meta.env.VITE_DEBUG_MODE === "true";
+import { useDebugMode } from "../utils/useDebugMode";
+import heroImg from "../assets/hero.jpg";
+import { container } from "../components/styles";
 
 export default function CustomerSuccess() {
   const [properties] = useProperties();
-  const [mileageOutUrl, setMileageOutUrl] = useState("");
-  const [signedContractUrl, setSignedContractUrl] = useState("");
-  const [debugEmail, setDebugEmail] = useState(null);
-  const [debugSignedEmail, setDebugSignedEmail] = useState(null);
+  const { debug: DEBUG } = useDebugMode();
 
-  useEffect(() => {
-    if (!DEBUG) return;
+  // Read from sessionStorage using useMemo (derived state)
+  const { mileageOutUrl, signedContractUrl, debugEmail, debugSignedEmail } = useMemo(() => {
+    if (!DEBUG) {
+      return {
+        mileageOutUrl: "",
+        signedContractUrl: "",
+        debugEmail: null,
+        debugSignedEmail: null,
+      };
+    }
 
     try {
       const url = sessionStorage.getItem("debug:mileageOutUrl") || "";
@@ -21,32 +27,39 @@ export default function CustomerSuccess() {
       const signedUrl = sessionStorage.getItem("debug:signedContractUrl") || "";
       const signedEmailRaw = sessionStorage.getItem("debug:signedContractEmail");
 
-      setMileageOutUrl(url);
-      setSignedContractUrl(signedUrl);
-
+      let email = null;
       if (emailRaw) {
         try {
-          setDebugEmail(JSON.parse(emailRaw));
+          email = JSON.parse(emailRaw);
         } catch {
-          setDebugEmail(null);
+          email = null;
         }
-      } else {
-        setDebugEmail(null);
       }
 
+      let signedEmail = null;
       if (signedEmailRaw) {
         try {
-          setDebugSignedEmail(JSON.parse(signedEmailRaw));
+          signedEmail = JSON.parse(signedEmailRaw);
         } catch {
-          setDebugSignedEmail(null);
+          signedEmail = null;
         }
-      } else {
-        setDebugSignedEmail(null);
       }
+
+      return {
+        mileageOutUrl: url,
+        signedContractUrl: signedUrl,
+        debugEmail: email,
+        debugSignedEmail: signedEmail,
+      };
     } catch {
-      // ignore
+      return {
+        mileageOutUrl: "",
+        signedContractUrl: "",
+        debugEmail: null,
+        debugSignedEmail: null,
+      };
     }
-  }, []);
+  }, [DEBUG]);
 
   const debugEmailText = useMemo(() => {
     if (!DEBUG || !debugEmail) return "";
@@ -65,22 +78,35 @@ export default function CustomerSuccess() {
   }, [debugSignedEmail]);
 
   return (
-    <div
-      style={{
-        maxWidth: 700,
-        margin: "0 auto",
-        padding: "40px 16px",
-        textAlign: "center",
-      }}
-    >
-      <h1 style={{ fontSize: "1.8rem", marginBottom: 16 }}>
-        {properties?.customerSuccess?.title || "Thank you!"}
-      </h1>
-      <p style={{ marginBottom: 24 }}>
-        {properties?.customerSuccess?.message || "Your information has been submitted successfully."}
-        <br />
-        {properties?.customerSuccess?.contactMessage || "If you need to correct or update anything, please contact us."}
-      </p>
+    <>
+      {/* HERO */}
+      <header className="hero" style={{ minHeight: "50vh" }}>
+        <div
+          className="hero-bg"
+          style={{ backgroundImage: `url(${heroImg})` }}
+          aria-label="Oahu Car Rentals - Beautiful Oahu landscape background"
+        />
+        <div className="hero-content" style={{ ...container, gridTemplateColumns: "1fr", textAlign: "center" }}>
+          <div style={{ maxWidth: 720, margin: "0 auto" }}>
+            <h1 style={{ fontSize: "32px", fontWeight: 900, marginBottom: 14 }}>
+              {properties?.customerSuccess?.title || "Thank you!"}
+            </h1>
+            <p style={{ fontSize: "18px", opacity: 0.95, lineHeight: 1.6 }}>
+              {properties?.customerSuccess?.message || "Your information has been submitted successfully."}
+              <br />
+              {properties?.customerSuccess?.contactMessage || "If you need to correct or update anything, please contact us."}
+            </p>
+          </div>
+        </div>
+      </header>
+      <div
+        style={{
+          maxWidth: 700,
+          margin: "0 auto",
+          padding: "40px 16px",
+          textAlign: "center",
+        }}
+      >
 
       {DEBUG && mileageOutUrl ? (
         <div
@@ -183,6 +209,7 @@ export default function CustomerSuccess() {
       <Link to="/" className="button">
         {properties?.customerSuccess?.backToHome || properties?.common?.buttons?.backToHome || "Back to Home"}
       </Link>
-    </div>
+      </div>
+    </>
   );
 }

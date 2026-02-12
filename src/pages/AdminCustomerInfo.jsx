@@ -1,12 +1,13 @@
 // src/pages/AdminCustomerInfo.jsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { buttonStyle, inputStyle } from "../components/styles";
 import { useProperties } from "../utils/useProperties";
+import { isValidDateString, isValidPhoneNumber } from "../utils/validation.js";
+import { useDebugMode } from "../utils/useDebugMode";
 
 /* -------------------- constants -------------------- */
-
-const DEBUG = import.meta.env.VITE_DEBUG_MODE === "true";
 
 const US_STATES = [
   { value: "AL", label: "AL — Alabama" },
@@ -79,7 +80,17 @@ function requiredText(v) {
 }
 
 function requiredDate(v) {
-  return /^\d{4}-\d{2}-\d{2}$/.test(String(v || ""));
+  return isValidDateString(String(v || ""));
+}
+
+// Get today's date in local timezone (YYYY-MM-DD format)
+// This ensures the max date for DOB is today, not tomorrow (which can happen with UTC)
+function getTodayLocalDate() {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function fileOk(f) {
@@ -128,6 +139,27 @@ function FilePicker({
   onTouch,
 }) {
   const [previewUrl, setPreviewUrl] = useState("");
+  const [isMobile, setIsMobile] = useState(false);
+  const cameraInputRef = useRef(null);
+  const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    // Detect mobile device
+    const checkMobile = () => {
+      if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+        return false;
+      }
+      try {
+        const isTouchDevice = 'ontouchstart' in window || (navigator.maxTouchPoints && navigator.maxTouchPoints > 0);
+        const isMobileUserAgent = navigator.userAgent && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        return isTouchDevice || isMobileUserAgent;
+      } catch (e) {
+        console.warn('Error detecting mobile device:', e);
+        return false;
+      }
+    };
+    setIsMobile(checkMobile());
+  }, []);
 
   useEffect(() => {
     if (!file) {
@@ -138,6 +170,23 @@ function FilePicker({
     setPreviewUrl(url);
     return () => URL.revokeObjectURL(url);
   }, [file]);
+
+  const handleFileChange = (e) => {
+    onTouch?.();
+    onChange(e.target.files?.[0] || null);
+    // Reset the input so the same file can be selected again if needed
+    e.target.value = "";
+  };
+
+  const handleCameraClick = () => {
+    onTouch?.();
+    cameraInputRef.current?.click();
+  };
+
+  const handleUploadClick = () => {
+    onTouch?.();
+    fileInputRef.current?.click();
+  };
 
   return (
     <div className="previewCard">
@@ -172,15 +221,40 @@ function FilePicker({
       ) : (
         <>
           <input
-            id={inputId}
+            ref={cameraInputRef}
+            id={`${inputId}-camera`}
             type="file"
             accept={accept}
-            onClick={onTouch}
-            onChange={(e) => {
-              onTouch?.();
-              onChange(e.target.files?.[0] || null);
-            }}
+            capture="environment"
+            style={{ display: "none" }}
+            onChange={handleFileChange}
           />
+          <input
+            ref={fileInputRef}
+            id={`${inputId}-file`}
+            type="file"
+            accept={accept}
+            style={{ display: "none" }}
+            onChange={handleFileChange}
+          />
+          <div style={{ display: "flex", gap: "10px", marginTop: "8px" }}>
+            {isMobile && (
+              <button
+                type="button"
+                style={{ ...buttonStyle, flex: 1 }}
+                onClick={handleCameraClick}
+              >
+                📷 Take Photo
+              </button>
+            )}
+            <button
+              type="button"
+              style={{ ...buttonStyle, flex: isMobile ? 1 : 1, width: isMobile ? "auto" : "100%" }}
+              onClick={handleUploadClick}
+            >
+              📁 Upload File
+            </button>
+          </div>
           {error ? <div className="fieldError">{error}</div> : null}
         </>
       )}
@@ -192,12 +266,27 @@ function FilePicker({
 
 export default function AdminCustomerInfo() {
   const [properties] = useProperties();
+  const { debug: DEBUG } = useDebugMode();
   const [params] = useSearchParams();
   const token = params.get("t") || "";
 
-  const [draft, setDraft] = useState(null);
-  const [loadStatus, setLoadStatus] = useState("loading"); // loading | ready | error
-  const [loadError, setLoadError] = useState("");
+  // Use React Query for data fetching
+  const { data: draftData, isLoading: isLoadingDraft, error: draftError } = useQuery({
+    queryKey: ['customerInfo', token],
+    queryFn: async () => {
+      if (!token) throw new Error("Missing token.");
+      const res = await fetch(`/api/decodeCustomerInfoLink?t=${encodeURIComponent(token)}`);
+      if (!res.ok) throw new Error(await res.text());
+      const out = await res.json();
+      return out.draft;
+    },
+    enabled: !!token, // Only run if token exists
+    retry: 1,
+  });
+
+  const draft = draftData || null;
+  const loadStatus = isLoadingDraft ? "loading" : draftError ? "error" : draft ? "ready" : "loading";
+  const loadError = draftError?.message || "";
 
   const [hasSecond, setHasSecond] = useState(false);
   const [submitStatus, setSubmitStatus] = useState("idle"); // idle | submitting | done | error
@@ -258,35 +347,14 @@ export default function AdminCustomerInfo() {
 
   const markTouched = (k) => setTouched((x) => ({ ...x, [k]: true }));
 
-  useEffect(() => {
-    async function load() {
-      try {
-        setLoadStatus("loading");
-        setLoadError("");
-
-        const res = await fetch(`/api/decodeCustomerInfoLink?t=${encodeURIComponent(token)}`);
-        if (!res.ok) throw new Error(await res.text());
-
-        const out = await res.json();
-        setDraft(out.draft);
-
-        // determine second driver default (keep behavior)
-        setHasSecond(false);
-
-        setLoadStatus("ready");
-      } catch (err) {
-        console.error(err);
-        setLoadStatus("error");
-        setLoadError(err?.message || "Invalid link.");
-      }
-    }
-
-    if (token) load();
-    else {
-      setLoadStatus("error");
-      setLoadError("Missing token.");
-    }
-  }, [token]);
+  const dayCount = useMemo(() => {
+    if (!draft?.startDate || !draft?.endDate) return null;
+    const start = new Date(draft.startDate);
+    const end = new Date(draft.endDate);
+    const diffTime = Math.abs(end - start);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  }, [draft?.startDate, draft?.endDate]);
 
   const errors = useMemo(() => {
     const e = {};
@@ -298,16 +366,28 @@ export default function AdminCustomerInfo() {
     if (!requiredText(d1.city)) e["d1.city"] = "Required";
     if (!requiredText(d1.state)) e["d1.state"] = "Required";
     if (!requiredText(d1.zip)) e["d1.zip"] = "Required";
-    if (!requiredText(d1.cellPhone)) e["d1.cellPhone"] = "Required";
+    if (!requiredText(d1.cellPhone)) {
+      e["d1.cellPhone"] = "Required";
+    } else if (!isValidPhoneNumber(d1.cellPhone)) {
+      e["d1.cellPhone"] = "Invalid phone number format";
+    }
     if (!requiredDate(d1.dob)) e["d1.dob"] = "Use YYYY-MM-DD";
     if (!requiredText(d1.dlNumber)) e["d1.dlNumber"] = "Required";
     if (!requiredText(d1.dlState)) e["d1.dlState"] = "Required";
     if (!requiredDate(d1.dlExp)) e["d1.dlExp"] = "Use YYYY-MM-DD";
 
     if (!requiredText(d1.insuranceCompany)) e["d1.insuranceCompany"] = "Required";
-    if (!requiredText(d1.insuranceCompanyPhone)) e["d1.insuranceCompanyPhone"] = "Required";
+    if (!requiredText(d1.insuranceCompanyPhone)) {
+      e["d1.insuranceCompanyPhone"] = "Required";
+    } else if (!isValidPhoneNumber(d1.insuranceCompanyPhone)) {
+      e["d1.insuranceCompanyPhone"] = "Invalid phone number format";
+    }
     if (!requiredText(d1.agentName)) e["d1.agentName"] = "Required";
-    if (!requiredText(d1.agentPhone)) e["d1.agentPhone"] = "Required";
+    if (!requiredText(d1.agentPhone)) {
+      e["d1.agentPhone"] = "Required";
+    } else if (!isValidPhoneNumber(d1.agentPhone)) {
+      e["d1.agentPhone"] = "Invalid phone number format";
+    }
 
     // Files required
     if (!fileOk(files.d1_insurance)) e["f.d1_insurance"] = "Required";
@@ -464,14 +544,11 @@ export default function AdminCustomerInfo() {
           <div className="intakeCard">
             <div className="intakeSummary">
               <div>
-                <strong>Vehicle ID:</strong> {maskedVin(draft.vin)}
-              </div>
-              <div>
-                <strong>Vehicle:</strong> {draft.make} {(draft.model || draft.year || "").trim()}{" "}
-                {draft.color}
+                <strong>Vehicle:</strong> {draft.color} {draft.make} {(draft.model || draft.year || "").trim()}
               </div>
               <div>
                 <strong>Dates:</strong> {draft.startDate} → {draft.endDate}
+                {dayCount !== null && ` (${dayCount} ${dayCount === 1 ? 'day' : 'days'})`}
               </div>
               {draft.costPerDay ? (
                 <div>
@@ -493,7 +570,7 @@ export default function AdminCustomerInfo() {
             </div>
           )}
 
-          <form className="intakeForm" onSubmit={submit}>
+          <form className="intakeForm" onSubmit={submit} style={{ marginTop: "16px" }}>
             <section className="intakeCard">
               <h2>Driver 1 (Customer)</h2>
 
@@ -593,6 +670,8 @@ export default function AdminCustomerInfo() {
                 <FieldRow label="Home Phone">
                   <input
                     style={inputStyle}
+                    name="home-phone"
+                    autoComplete="tel"
                     value={d1.homePhone}
                     onChange={(e) => set1("homePhone", formatPhoneInput(e.target.value))}
                   />
@@ -601,6 +680,8 @@ export default function AdminCustomerInfo() {
                 <FieldRow label="Business Phone">
                   <input
                     style={inputStyle}
+                    name="work-phone"
+                    autoComplete="tel"
                     value={d1.businessPhone}
                     onChange={(e) => set1("businessPhone", formatPhoneInput(e.target.value))}
                   />
@@ -609,6 +690,8 @@ export default function AdminCustomerInfo() {
                 <FieldRow label="Cell" error={touched["d1.cellPhone"] ? errors["d1.cellPhone"] : ""}>
                   <input
                     style={inputStyle}
+                    name="tel"
+                    autoComplete="tel"
                     className={
                       touched["d1.cellPhone"] && errors["d1.cellPhone"] ? "inputError" : ""
                     }
@@ -628,7 +711,7 @@ export default function AdminCustomerInfo() {
                     value={d1.dob}
                     onBlur={() => markTouched("d1.dob")}
                     onChange={(e) => set1("dob", e.target.value)}
-                    max={new Date().toISOString().split("T")[0]}
+                    max={getTodayLocalDate()}
                   />
                 </FieldRow>
 
@@ -711,70 +794,6 @@ export default function AdminCustomerInfo() {
             </section>
 
             <section className="intakeCard">
-              <h2>Insurance</h2>
-
-              <div className="grid2">
-                <FieldRow
-                  label="Insurance Company"
-                  error={touched["d1.insuranceCompany"] ? errors["d1.insuranceCompany"] : ""}
-                >
-                  <input
-                    style={inputStyle}
-                    className={
-                      touched["d1.insuranceCompany"] && errors["d1.insuranceCompany"]
-                        ? "inputError"
-                        : ""
-                    }
-                    value={d1.insuranceCompany}
-                    onBlur={() => markTouched("d1.insuranceCompany")}
-                    onChange={(e) => set1("insuranceCompany", e.target.value)}
-                  />
-                </FieldRow>
-
-                <FieldRow
-                  label="Company Phone"
-                  error={
-                    touched["d1.insuranceCompanyPhone"] ? errors["d1.insuranceCompanyPhone"] : ""
-                  }
-                >
-                  <input
-                    style={inputStyle}
-                    className={
-                      touched["d1.insuranceCompanyPhone"] && errors["d1.insuranceCompanyPhone"]
-                        ? "inputError"
-                        : ""
-                    }
-                    value={d1.insuranceCompanyPhone}
-                    onBlur={() => markTouched("d1.insuranceCompanyPhone")}
-                    onChange={(e) => set1("insuranceCompanyPhone", formatPhoneInput(e.target.value))}
-                  />
-                </FieldRow>
-              </div>
-
-              <div className="grid2">
-                <FieldRow label="Agent Name" error={touched["d1.agentName"] ? errors["d1.agentName"] : ""}>
-                  <input
-                    style={inputStyle}
-                    className={touched["d1.agentName"] && errors["d1.agentName"] ? "inputError" : ""}
-                    value={d1.agentName}
-                    onBlur={() => markTouched("d1.agentName")}
-                    onChange={(e) => set1("agentName", e.target.value)}
-                  />
-                </FieldRow>
-
-                <FieldRow label="Agent Phone" error={touched["d1.agentPhone"] ? errors["d1.agentPhone"] : ""}>
-                  <input
-                    style={inputStyle}
-                    className={touched["d1.agentPhone"] && errors["d1.agentPhone"] ? "inputError" : ""}
-                    value={d1.agentPhone}
-                    onBlur={() => markTouched("d1.agentPhone")}
-                    onChange={(e) => set1("agentPhone", formatPhoneInput(e.target.value))}
-                  />
-                </FieldRow>
-              </div>
-            </section>
-
-            <section className="intakeCard">
               <h2>Driver 1 Photos</h2>
 
               <div className="fileGrid">
@@ -808,14 +827,37 @@ export default function AdminCustomerInfo() {
             <section className="intakeCard">
               <h2>Second Driver</h2>
 
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ 
+                display: "flex", 
+                alignItems: "center", 
+                gap: 12,
+                padding: "12px 0",
+                borderBottom: hasSecond ? "1px solid rgba(0,0,0,0.08)" : "none",
+                marginBottom: hasSecond ? "16px" : "0"
+              }}>
                 <input
                   id="hasSecondDriver"
                   type="checkbox"
                   checked={hasSecond}
                   onChange={(e) => setHasSecond(e.target.checked)}
+                  style={{
+                    width: "18px",
+                    height: "18px",
+                    cursor: "pointer",
+                    accentColor: "var(--primary)"
+                  }}
                 />
-                <label htmlFor="hasSecondDriver" style={{ margin: 0 }}>
+                <label 
+                  htmlFor="hasSecondDriver" 
+                  style={{ 
+                    margin: 0,
+                    cursor: "pointer",
+                    fontSize: "15px",
+                    fontWeight: 600,
+                    color: "var(--text)",
+                    userSelect: "none"
+                  }}
+                >
                   Add a second driver
                 </label>
               </div>
@@ -910,7 +952,7 @@ export default function AdminCustomerInfo() {
                         value={d2.dob}
                         onBlur={() => markTouched("d2.dob")}
                         onChange={(e) => set2("dob", e.target.value)}
-                        max={new Date().toISOString().split("T")[0]}
+                        max={getTodayLocalDate()}
                       />
                     </FieldRow>
 
@@ -986,6 +1028,70 @@ export default function AdminCustomerInfo() {
                   </div>
                 </>
               ) : null}
+            </section>
+
+            <section className="intakeCard">
+              <h2>Insurance</h2>
+
+              <div className="grid2">
+                <FieldRow
+                  label="Insurance Company"
+                  error={touched["d1.insuranceCompany"] ? errors["d1.insuranceCompany"] : ""}
+                >
+                  <input
+                    style={inputStyle}
+                    className={
+                      touched["d1.insuranceCompany"] && errors["d1.insuranceCompany"]
+                        ? "inputError"
+                        : ""
+                    }
+                    value={d1.insuranceCompany}
+                    onBlur={() => markTouched("d1.insuranceCompany")}
+                    onChange={(e) => set1("insuranceCompany", e.target.value)}
+                  />
+                </FieldRow>
+
+                <FieldRow
+                  label="Company Phone"
+                  error={
+                    touched["d1.insuranceCompanyPhone"] ? errors["d1.insuranceCompanyPhone"] : ""
+                  }
+                >
+                  <input
+                    style={inputStyle}
+                    className={
+                      touched["d1.insuranceCompanyPhone"] && errors["d1.insuranceCompanyPhone"]
+                        ? "inputError"
+                        : ""
+                    }
+                    value={d1.insuranceCompanyPhone}
+                    onBlur={() => markTouched("d1.insuranceCompanyPhone")}
+                    onChange={(e) => set1("insuranceCompanyPhone", formatPhoneInput(e.target.value))}
+                  />
+                </FieldRow>
+              </div>
+
+              <div className="grid2">
+                <FieldRow label="Agent Name" error={touched["d1.agentName"] ? errors["d1.agentName"] : ""}>
+                  <input
+                    style={inputStyle}
+                    className={touched["d1.agentName"] && errors["d1.agentName"] ? "inputError" : ""}
+                    value={d1.agentName}
+                    onBlur={() => markTouched("d1.agentName")}
+                    onChange={(e) => set1("agentName", e.target.value)}
+                  />
+                </FieldRow>
+
+                <FieldRow label="Agent Phone" error={touched["d1.agentPhone"] ? errors["d1.agentPhone"] : ""}>
+                  <input
+                    style={inputStyle}
+                    className={touched["d1.agentPhone"] && errors["d1.agentPhone"] ? "inputError" : ""}
+                    value={d1.agentPhone}
+                    onBlur={() => markTouched("d1.agentPhone")}
+                    onChange={(e) => set1("agentPhone", formatPhoneInput(e.target.value))}
+                  />
+                </FieldRow>
+              </div>
             </section>
 
             {/* ✅ Full-width bottom submit across entire form */}

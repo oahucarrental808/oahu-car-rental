@@ -19,6 +19,14 @@ export { createDropoffMileageLink } from "./src/createDropoffMileageLink.js";
 export { submitSignedContract } from "./src/submitSignedContract.js";
 export { sendAdminReminders } from "./src/sendAdminReminders.js";
 
+// Admin authentication
+export { adminLogin } from "./src/adminLogin.js";
+export { adminLogout } from "./src/adminLogout.js";
+export { adminVerify } from "./src/adminVerify.js";
+
+// Health check
+export { health } from "./src/health.js";
+
 // from secrets
 const CLIENT_ID = process.env.OAUTH_CLIENT_ID;
 const CLIENT_SECRET = process.env.OAUTH_CLIENT_SECRET;

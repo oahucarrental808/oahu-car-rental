@@ -1,59 +1,58 @@
 import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import AdminGate from "../components/AdminGate";
 import { buttonStyle, container, inputStyle, labelStyle, textareaStyle } from "../components/styles";
 import { getTokenFromUrl, formatEmailPreviewText } from "../utils/adminUtils";
 import { useProperties } from "../utils/useProperties";
-
-const DEBUG = import.meta.env.VITE_DEBUG_MODE === "true";
+import { useDebugMode } from "../utils/useDebugMode";
 
 export default function AdminDropoffInstructions() {
   const [properties] = useProperties();
-  const [token, setToken] = useState("");
-  const [draft, setDraft] = useState(null);
+  const { debug: DEBUG } = useDebugMode();
+  const token = useMemo(() => getTokenFromUrl(), []);
+
+  // Use React Query for data fetching
+  const { data: draft, isLoading: isLoadingDraft, error: draftError } = useQuery({
+    queryKey: ['adminInstruction', token],
+    queryFn: async () => {
+      if (!token) throw new Error("Missing token.");
+      const res = await fetch(`/api/decodeAdminInstructionLink?t=${encodeURIComponent(token)}`);
+      if (!res.ok) throw new Error(await res.text());
+      const out = await res.json();
+      if (!out?.ok || !out?.draft) throw new Error("Invalid link");
+      return out.draft;
+    },
+    enabled: !!token,
+    retry: 1,
+  });
+
+  // Use derived state with default values from properties
+  const defaultAddress = useMemo(() => properties?.addresses?.defaultDropoff || "", [properties]);
+  const defaultInstructions = useMemo(() => properties?.admin?.pages?.dropoffInstructions?.defaultInstructions || "", [properties]);
+  
   const [instructions, setInstructions] = useState("");
   const [address, setAddress] = useState("");
-  const [status, setStatus] = useState("idle"); // idle | loading | ready | sending | sent | error
-  const [error, setError] = useState("");
 
+  // Set defaults when properties load (only if field is empty)
+  useEffect(() => {
+    if (defaultAddress && !address) {
+      setAddress(defaultAddress);
+    }
+  }, [defaultAddress, address]);
+  
+  useEffect(() => {
+    if (defaultInstructions && !instructions) {
+      setInstructions(defaultInstructions);
+    }
+  }, [defaultInstructions, instructions]);
+
+  const status = isLoadingDraft ? "loading" : draftError ? "error" : draft ? "ready" : "idle";
+  const error = draftError?.message || "";
+
+  const [submitStatus, setSubmitStatus] = useState("idle"); // idle | sending | sent | error
+  const [submitError, setSubmitError] = useState("");
   const [mileageInUrl, setMileageInUrl] = useState("");
   const [debugEmail, setDebugEmail] = useState(null);
-
-  // Set default address when properties load
-  useEffect(() => {
-    if (properties?.addresses?.defaultDropoff && !address) {
-      setAddress(properties.addresses.defaultDropoff);
-    }
-  }, [properties, address]);
-
-  useEffect(() => {
-    const t = getTokenFromUrl();
-    setToken(t);
-
-    if (!t) {
-      setStatus("error");
-      setError("Missing token.");
-      return;
-    }
-
-    (async () => {
-      try {
-        setStatus("loading");
-        setError("");
-
-        const res = await fetch(`/api/decodeAdminInstructionLink?t=${encodeURIComponent(t)}`);
-        if (!res.ok) throw new Error(await res.text());
-        const out = await res.json();
-        if (!out?.ok || !out?.draft) throw new Error("Invalid link");
-
-        setDraft(out.draft);
-        setStatus("ready");
-      } catch (e) {
-        console.error(e);
-        setStatus("error");
-        setError(e?.message || "Invalid or expired link.");
-      }
-    })();
-  }, []);
 
   const emailPreviewText = useMemo(
     () => formatEmailPreviewText(DEBUG, debugEmail, "Dropoff instructions"),
@@ -65,8 +64,8 @@ export default function AdminDropoffInstructions() {
     if (!token) return;
 
     try {
-      setStatus("sending");
-      setError("");
+      setSubmitStatus("sending");
+      setSubmitError("");
       setMileageInUrl("");
       setDebugEmail(null);
 
@@ -82,11 +81,11 @@ export default function AdminDropoffInstructions() {
 
       setMileageInUrl(out.mileageInUrl);
       if (out?.debugEmail) setDebugEmail(out.debugEmail);
-      setStatus("sent");
+      setSubmitStatus("sent");
     } catch (e2) {
       console.error(e2);
-      setStatus("error");
-      setError(e2?.message || "Failed to submit.");
+      setSubmitStatus("error");
+      setSubmitError(e2?.message || "Failed to submit.");
     }
   }
 
@@ -114,7 +113,7 @@ export default function AdminDropoffInstructions() {
           </div>
         ) : null}
 
-        {error ? (
+        {(error || submitError) ? (
           <div
             style={{
               marginBottom: 16,
@@ -125,7 +124,7 @@ export default function AdminDropoffInstructions() {
               color: "var(--danger)",
             }}
           >
-            {error}
+            {error || submitError}
           </div>
         ) : null}
 
@@ -156,9 +155,9 @@ export default function AdminDropoffInstructions() {
             type="submit"
             className="button"
             style={{ ...buttonStyle, width: "100%", marginTop: 14 }}
-            disabled={status === "loading" || status === "sending"}
+            disabled={status === "loading" || submitStatus === "sending"}
           >
-            {status === "sending" 
+            {submitStatus === "sending" 
               ? (properties?.common?.buttons?.generating || "Generating...")
               : (properties?.admin?.pages?.dropoffInstructions?.buttons?.generate || "Generate Dropoff Link")}
           </button>

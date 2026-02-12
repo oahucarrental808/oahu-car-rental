@@ -50,8 +50,9 @@ export default function TopNav() {
               <div role="menu" className="menu-dropdown">
                 <DropItem to="/" label={properties?.navigation?.home || "Home"} />
                 <DropItem to="/gallery" label={properties?.navigation?.gallery || "Gallery"} />
+                <DropItem to="/destinations" label={properties?.navigation?.destinations || "Destinations"} />
                 <DropItem to="/request" label={properties?.navigation?.request || "Request"} />
-                <DropItem to="/faq" label={properties?.navigation?.faq || "FAQ"} />
+                <DropItem to="/faq" label={properties?.navigation?.faq || "Information"} />
                 <DropItem to="/about" label={properties?.navigation?.about || "About Us"} />
               </div>
             )}

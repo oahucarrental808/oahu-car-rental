@@ -21,12 +21,51 @@
   "about": {
     "title": "About Us",
     "description": "We're a local Oʻahu operation focused on clean cars, straightforward pickup, and quick responses. Our goal is to make your rental easy so you can spend more time enjoying the island.",
+    "seoTitle": "About Us - Oahu Car Rentals",
+    "seoDescription": "Learn about Oahu Car Rentals - a local Oʻahu operation providing clean cars, straightforward pickup, and quick responses for your island adventure.",
     "establishedLabel": "Established:",
     "emailLabel": "Email:",
-    "phoneLabel": "Phone:"
+    "phoneLabel": "Phone:",
+    "addressLabel": "Address:",
+    "hoursLabel": "Hours:",
+    "contactTitle": "Contact Us",
+    "email": "oahucarrentals@hotmail.com",
+    "phone": "(808) 683-2509",
+    "hours": "Monday - Sunday: 8:00 AM - 6:00 PM HST",
+    "missionTitle": "Our Mission",
+    "mission": "To provide reliable, affordable car rentals with exceptional customer service, making it easy for visitors and locals to explore the beautiful island of Oʻahu.",
+    "valuesTitle": "What We Value",
+    "values": [
+      "Clean, well-maintained vehicles",
+      "Transparent pricing with no hidden fees",
+      "Quick response times to inquiries",
+      "Local knowledge and island expertise",
+      "Customer satisfaction above all"
+    ],
+    "servicesTitle": "What We Offer",
+    "services": [
+      {
+        "title": "Flexible Rental Options",
+        "description": "Choose from a variety of vehicles to suit your needs, from compact cars to SUVs and vans. We offer daily, weekly, and extended rental periods."
+      },
+      {
+        "title": "Convenient Pickup & Drop-off",
+        "description": "Flexible pickup and drop-off locations including airport service. We work with you to find the most convenient option for your schedule."
+      },
+      {
+        "title": "Local Support",
+        "description": "As a local business, we're here when you need us. Quick responses, local knowledge, and personalized service throughout your rental."
+      },
+      {
+        "title": "Additional Services",
+        "description": "Beach supply rentals, child seats, and other extras available upon request. We aim to make your island experience complete."
+      }
+    ],
+    "ctaText": "Ready to book your rental? Get started with a quick quote.",
+    "ctaButton": "Request a Quote"
   },
   "faq": {
-    "title": "FAQ",
+    "title": "Information",
     "items": [
       {
         "key": "whatDoINeed",
@@ -390,8 +429,9 @@
     "menu": "Menu",
     "home": "Home",
     "gallery": "Gallery",
+    "destinations": "Destinations",
     "request": "Request",
-    "faq": "FAQ",
+    "faq": "Information",
     "about": "About Us"
   },
   "common": {

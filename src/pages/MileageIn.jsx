@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef, useEffect } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { buttonStyle, inputStyle, textareaStyle } from "../components/styles";
 import { useProperties } from "../utils/useProperties";
@@ -147,10 +147,38 @@ export default function MileageIn() {
             </div>
             <div className="fieldControl">
               <input
+                ref={cameraInputRef}
                 type="file"
                 accept="image/*"
-                onChange={(e) => setDashboard(e.target.files?.[0] || null)}
+                capture="environment"
+                style={{ display: "none" }}
+                onChange={handleFileChange}
               />
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                style={{ display: "none" }}
+                onChange={handleFileChange}
+              />
+              <div style={{ display: "flex", gap: "10px" }}>
+                {isMobile && (
+                  <button
+                    type="button"
+                    style={{ ...buttonStyle, flex: 1 }}
+                    onClick={handleCameraClick}
+                  >
+                    📷 Take Photo
+                  </button>
+                )}
+                <button
+                  type="button"
+                  style={{ ...buttonStyle, flex: isMobile ? 1 : 1, width: isMobile ? "auto" : "100%" }}
+                  onClick={handleUploadClick}
+                >
+                  📁 Upload File
+                </button>
+              </div>
               {dashboardMeta ? (
                 <div style={{ marginTop: 6, fontSize: 12, opacity: 0.8 }}>{dashboardMeta}</div>
               ) : null}

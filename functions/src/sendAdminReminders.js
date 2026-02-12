@@ -6,6 +6,12 @@ import { getFirestore } from "firebase-admin/firestore";
 import { sendEmail } from "./common/email.js";
 
 const ADMIN_EMAIL = defineSecret("ADMIN_EMAIL");
+// Provider-specific secrets
+const SMTP_EMAIL_GMAIL = defineSecret("SMTP_EMAIL_GMAIL");
+const SMTP_PASSWORD_GMAIL = defineSecret("SMTP_PASSWORD_GMAIL");
+const SMTP_EMAIL_OUTLOOK = defineSecret("SMTP_EMAIL_OUTLOOK");
+const SMTP_PASSWORD_OUTLOOK = defineSecret("SMTP_PASSWORD_OUTLOOK");
+// Legacy secrets (for backward compatibility)
 const SMTP_EMAIL = defineSecret("SMTP_EMAIL");
 const SMTP_PASSWORD = defineSecret("SMTP_PASSWORD");
 
@@ -119,7 +125,15 @@ export const sendAdminReminders = onSchedule(
   {
     schedule: "0 18 * * *", // 18:00 UTC = 8:00 HST (Hawaii Standard Time, UTC-10)
     timeZone: "UTC",
-    secrets: [ADMIN_EMAIL, SMTP_EMAIL, SMTP_PASSWORD],
+    secrets: [
+      ADMIN_EMAIL, 
+      SMTP_EMAIL_GMAIL, 
+      SMTP_PASSWORD_GMAIL, 
+      SMTP_EMAIL_OUTLOOK, 
+      SMTP_PASSWORD_OUTLOOK,
+      SMTP_EMAIL, 
+      SMTP_PASSWORD
+    ],
   },
   async (event) => {
     try {

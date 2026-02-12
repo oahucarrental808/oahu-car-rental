@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import QuickRequestCard from "../components/QuickRequestCard";
 import { container } from "../components/styles";
 import { useProperties } from "../utils/useProperties";
+import SEO from "../components/SEO";
 
 import reviews from "../data/reviews.json";
 
@@ -37,8 +38,71 @@ export default function Home() {
     return "★★★★★☆☆☆☆☆".slice(5 - x, 10 - x);
   }
 
+  const seoDescription = properties?.home?.description || "Need a car for your trip? We make it easy to get a quick quote with no hassle. Choose your dates and we'll confirm availability fast. Pickup and drop-off are straightforward with local support. Clean cars, fair prices, and a smooth start to your island time.";
+
+  // Add review/aggregate rating schema for rich snippets
+  useEffect(() => {
+    if (!list.length || !current) return;
+
+    let reviewSchemaScript = document.querySelector('script[type="application/ld+json"][data-review-schema]');
+    if (!reviewSchemaScript) {
+      reviewSchemaScript = document.createElement("script");
+      reviewSchemaScript.setAttribute("type", "application/ld+json");
+      reviewSchemaScript.setAttribute("data-review-schema", "true");
+      document.head.appendChild(reviewSchemaScript);
+    }
+
+    const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+    
+    // Calculate average rating
+    const avgRating = list.reduce((sum, r) => sum + (Number(r.rating) || 0), 0) / list.length;
+    const reviewCount = list.length;
+
+    const reviewSchema = {
+      "@context": "https://schema.org",
+      "@type": "CarRental",
+      "name": properties?.brand?.name || "Oahu Car Rentals",
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": avgRating.toFixed(1),
+        "reviewCount": reviewCount,
+        "bestRating": "5",
+        "worstRating": "1"
+      },
+      "review": list.map(review => ({
+        "@type": "Review",
+        "author": {
+          "@type": "Person",
+          "name": review.name || "Anonymous"
+        },
+        "reviewRating": {
+          "@type": "Rating",
+          "ratingValue": review.rating || 5,
+          "bestRating": "5",
+          "worstRating": "1"
+        },
+        "reviewBody": review.text || ""
+      }))
+    };
+
+    reviewSchemaScript.textContent = JSON.stringify(reviewSchema);
+
+    return () => {
+      const script = document.querySelector('script[type="application/ld+json"][data-review-schema]');
+      if (script) {
+        script.remove();
+      }
+    };
+  }, [list, current, properties]);
+
   return (
     <>
+      <SEO
+        title={`${properties?.brand?.name || "Oahu Car Rentals"} - ${properties?.brand?.tagline || "Simple, Fast Car Rentals on Oʻahu"} | Honolulu, Hawaii`}
+        description={seoDescription}
+        keywords="Oahu car rental, Honolulu car rental, Hawaii car rental, car rental Oahu, rent a car Honolulu, cheap car rental Hawaii, Oahu vehicle rental, car hire Oahu, Oahu car rental service, Honolulu vehicle rental, best car rental Oahu, affordable car rental Honolulu, Oahu car rental near me, car rental Honolulu airport, Oahu car rental deals"
+        image={heroImg}
+      />
       {/* HERO */}
       <header className="hero">
         <div
@@ -67,7 +131,7 @@ export default function Home() {
 
             <img 
               src={suvImg} 
-              alt="Jeep" 
+              alt="SUV rental vehicle available for rent on Oahu - Oahu Car Rentals fleet" 
               style={{ 
                 width: "100%", 
                 maxWidth: "100%",
@@ -124,7 +188,6 @@ export default function Home() {
                 </div>
                 <div style={{ marginTop: 8, fontSize: 13, opacity: 0.75 }}>
                   — {current.name}
-                  {current.location ? `, ${current.location}` : ""}
                 </div>
               </>
             )}

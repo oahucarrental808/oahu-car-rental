@@ -4,6 +4,7 @@ import { logger } from "firebase-functions";
 import cors from "cors";
 import crypto from "node:crypto";
 import { sendEmail } from "./common/email.js";
+import { getUrl, isDebugMode } from "./common/config.js";
 
 const ADMIN_SECRET = defineSecret("ADMIN_SECRET");
 const LINK_SECRET = defineSecret("LINK_SECRET");
@@ -63,11 +64,29 @@ function encrypt(payloadObj, secret) {
   return `${b64url(iv)}.${b64url(tag)}.${b64url(ciphertext)}`;
 }
 
+// Provider-specific secrets
+const SMTP_EMAIL_GMAIL = defineSecret("SMTP_EMAIL_GMAIL");
+const SMTP_PASSWORD_GMAIL = defineSecret("SMTP_PASSWORD_GMAIL");
+const SMTP_EMAIL_OUTLOOK = defineSecret("SMTP_EMAIL_OUTLOOK");
+const SMTP_PASSWORD_OUTLOOK = defineSecret("SMTP_PASSWORD_OUTLOOK");
+// Legacy secrets (for backward compatibility)
 const SMTP_EMAIL = defineSecret("SMTP_EMAIL");
 const SMTP_PASSWORD = defineSecret("SMTP_PASSWORD");
 
 export const createCustomerInfoLink = onRequest(
-  { region: "us-central1", secrets: [ADMIN_SECRET, LINK_SECRET, SMTP_EMAIL, SMTP_PASSWORD] },
+  { 
+    region: "us-central1", 
+    secrets: [
+      ADMIN_SECRET, 
+      LINK_SECRET, 
+      SMTP_EMAIL_GMAIL, 
+      SMTP_PASSWORD_GMAIL, 
+      SMTP_EMAIL_OUTLOOK, 
+      SMTP_PASSWORD_OUTLOOK,
+      SMTP_EMAIL, 
+      SMTP_PASSWORD
+    ] 
+  },
   (req, res) =>
     corsHandler(req, res, async () => {
       try {
@@ -111,27 +130,50 @@ export const createCustomerInfoLink = onRequest(
 
         const token = encrypt(draft, LINK_SECRET.value());
 
-        const url = `https://oahu-car-rentals.web.app/admin/customer-info?t=${encodeURIComponent(
+        const url = getUrl(`/admin/customer-info?t=${encodeURIComponent(
           token
-        )}`;
+        )}`);
+
+        const debug = isDebugMode();
+
+        const emailText = [
+          "Hello,",
+          "",
+          "Thank you for choosing Oahu Car Rentals for your upcoming trip. We're excited to help you explore the island!",
+          "",
+          "To complete your reservation, please provide your driver and insurance information using the secure link below:",
+          "",
+          `Complete Your Rental Information: ${url}`,
+          "",
+          "This secure link will expire in 7 days for your protection. Please complete the form as soon as possible to ensure a smooth pickup process.",
+          "",
+          "If you have any questions or need assistance, please don't hesitate to reach out to us.",
+          "",
+          "We look forward to serving you!",
+          "",
+          "Best regards,",
+          "Oahu Car Rentals",
+        ].join("\n");
+
+        const emailHtml = [
+          "<p>Hello,</p>",
+          "<p>Thank you for choosing Oahu Car Rentals for your upcoming trip. We're excited to help you explore the island!</p>",
+          "<p>To complete your reservation, please provide your driver and insurance information using the secure link below:</p>",
+          `<p><a href="${url}" style="color: #1f6fc1; text-decoration: underline;">Complete Your Rental Information</a></p>`,
+          "<p>This secure link will expire in 7 days for your protection. Please complete the form as soon as possible to ensure a smooth pickup process.</p>",
+          "<p>If you have any questions or need assistance, please don't hesitate to reach out to us.</p>",
+          "<p>We look forward to serving you!</p>",
+          "<p>Best regards,<br>Oahu Car Rentals</p>",
+        ].join("");
 
         // Send email to customer with link
-        const debug = String(process.env.DEBUG_MODE || "").toLowerCase() === "true";
         if (!debug) {
           try {
             await sendEmail({
               to: draft.customerEmail,
               subject: "Complete Your Rental Information - Oahu Car Rentals",
-              text: [
-                "Hi,",
-                "",
-                "Please complete your driver and insurance information using the secure link below:",
-                url,
-                "",
-                "This link will expire in 7 days.",
-                "",
-                "— Oahu Car Rentals",
-              ].join("\n"),
+              text: emailText,
+              html: emailHtml,
             });
             logger.info("Customer info link email sent", { email: draft.customerEmail });
           } catch (emailError) {
@@ -143,7 +185,15 @@ export const createCustomerInfoLink = onRequest(
           }
         }
 
-        return res.json({ ok: true, url });
+        const responseData = { url };
+        if (debug) {
+          responseData.debugEmail = {
+            to: draft.customerEmail,
+            subject: "Complete Your Rental Information - Oahu Car Rentals",
+            body: emailText,
+          };
+        }
+        return res.json({ ok: true, ...responseData });
       } catch (e) {
         logger.error(e);
         return res.status(e.status || 500).json({ ok: false, error: e.message || String(e) });

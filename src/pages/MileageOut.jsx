@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef, useEffect } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { buttonStyle, inputStyle } from "../components/styles";
 import { useProperties } from "../utils/useProperties";
@@ -23,11 +23,46 @@ export default function MileageOut() {
   const [status, setStatus] = useState("idle"); // idle | submitting | done | error
   const [error, setError] = useState("");
   const [result, setResult] = useState(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const cameraInputRef = useRef(null);
+  const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    // Detect mobile device
+    const checkMobile = () => {
+      if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+        return false;
+      }
+      try {
+        const isTouchDevice = 'ontouchstart' in window || (navigator.maxTouchPoints && navigator.maxTouchPoints > 0);
+        const isMobileUserAgent = navigator.userAgent && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        return isTouchDevice || isMobileUserAgent;
+      } catch (e) {
+        console.warn('Error detecting mobile device:', e);
+        return false;
+      }
+    };
+    setIsMobile(checkMobile());
+  }, []);
 
   const dashboardMeta = useMemo(() => {
     if (!dashboard) return "";
     return `${dashboard.name} (${Math.round(dashboard.size / 1024)} KB)`;
   }, [dashboard]);
+
+  const handleFileChange = (e) => {
+    setDashboard(e.target.files?.[0] || null);
+    // Reset the input so the same file can be selected again if needed
+    e.target.value = "";
+  };
+
+  const handleCameraClick = () => {
+    cameraInputRef.current?.click();
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
 
   async function onSubmit(e) {
     e.preventDefault();
@@ -139,10 +174,38 @@ export default function MileageOut() {
             </div>
             <div className="fieldControl">
               <input
+                ref={cameraInputRef}
                 type="file"
                 accept="image/*"
-                onChange={(e) => setDashboard(e.target.files?.[0] || null)}
+                capture="environment"
+                style={{ display: "none" }}
+                onChange={handleFileChange}
               />
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                style={{ display: "none" }}
+                onChange={handleFileChange}
+              />
+              <div style={{ display: "flex", gap: "10px" }}>
+                {isMobile && (
+                  <button
+                    type="button"
+                    style={{ ...buttonStyle, flex: 1 }}
+                    onClick={handleCameraClick}
+                  >
+                    📷 Take Photo
+                  </button>
+                )}
+                <button
+                  type="button"
+                  style={{ ...buttonStyle, flex: isMobile ? 1 : 1, width: isMobile ? "auto" : "100%" }}
+                  onClick={handleUploadClick}
+                >
+                  📁 Upload File
+                </button>
+              </div>
               {dashboardMeta ? (
                 <div style={{ marginTop: 6, fontSize: 12, opacity: 0.8 }}>{dashboardMeta}</div>
               ) : null}

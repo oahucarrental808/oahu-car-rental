@@ -20,6 +20,12 @@ const OAUTH_CLIENT_ID = defineSecret("OAUTH_CLIENT_ID");
 const OAUTH_CLIENT_SECRET = defineSecret("OAUTH_CLIENT_SECRET");
 const OAUTH_REDIRECT_URI = defineSecret("OAUTH_REDIRECT_URI");
 const DRIVE_REFRESH_TOKEN = defineSecret("DRIVE_REFRESH_TOKEN");
+// Provider-specific secrets
+const SMTP_EMAIL_GMAIL = defineSecret("SMTP_EMAIL_GMAIL");
+const SMTP_PASSWORD_GMAIL = defineSecret("SMTP_PASSWORD_GMAIL");
+const SMTP_EMAIL_OUTLOOK = defineSecret("SMTP_EMAIL_OUTLOOK");
+const SMTP_PASSWORD_OUTLOOK = defineSecret("SMTP_PASSWORD_OUTLOOK");
+// Legacy secrets (for backward compatibility)
 const SMTP_EMAIL = defineSecret("SMTP_EMAIL");
 const SMTP_PASSWORD = defineSecret("SMTP_PASSWORD");
 const ADMIN_EMAIL = defineSecret("ADMIN_EMAIL");
@@ -203,6 +209,10 @@ export const submitMileageIn = onRequest(
       OAUTH_CLIENT_SECRET,
       OAUTH_REDIRECT_URI,
       DRIVE_REFRESH_TOKEN,
+      SMTP_EMAIL_GMAIL,
+      SMTP_PASSWORD_GMAIL,
+      SMTP_EMAIL_OUTLOOK,
+      SMTP_PASSWORD_OUTLOOK,
       SMTP_EMAIL,
       SMTP_PASSWORD,
       ADMIN_EMAIL,

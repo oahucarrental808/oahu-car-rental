@@ -14,6 +14,7 @@ import { mustString, isValidDateString } from "./common/validate.js";
 import { CONTRACT_COORDS } from "./pdfCoordinates.js";
 import { sendEmail } from "./common/email.js";
 import { sendPickupReminderIfNeeded } from "./sendAdminReminders.js";
+import { createOAuthClient } from "./common/oauth.js";
 
 /* ------------------------------------------------------------------ */
 /* Secrets                                                            */
@@ -25,6 +26,12 @@ const OAUTH_CLIENT_ID = defineSecret("OAUTH_CLIENT_ID");
 const OAUTH_CLIENT_SECRET = defineSecret("OAUTH_CLIENT_SECRET");
 const OAUTH_REDIRECT_URI = defineSecret("OAUTH_REDIRECT_URI");
 const DRIVE_REFRESH_TOKEN = defineSecret("DRIVE_REFRESH_TOKEN");
+// Provider-specific secrets
+const SMTP_EMAIL_GMAIL = defineSecret("SMTP_EMAIL_GMAIL");
+const SMTP_PASSWORD_GMAIL = defineSecret("SMTP_PASSWORD_GMAIL");
+const SMTP_EMAIL_OUTLOOK = defineSecret("SMTP_EMAIL_OUTLOOK");
+const SMTP_PASSWORD_OUTLOOK = defineSecret("SMTP_PASSWORD_OUTLOOK");
+// Legacy secrets (for backward compatibility)
 const SMTP_EMAIL = defineSecret("SMTP_EMAIL");
 const SMTP_PASSWORD = defineSecret("SMTP_PASSWORD");
 const ADMIN_EMAIL = defineSecret("ADMIN_EMAIL");
@@ -120,11 +127,7 @@ function requirePhoto(files, key) {
   }
 }
 
-function oauthClientFromSecrets({ clientId, clientSecret, redirectUri, refreshToken }) {
-  const oauth2Client = new google.auth.OAuth2(clientId, clientSecret, redirectUri);
-  oauth2Client.setCredentials({ refresh_token: refreshToken });
-  return oauth2Client;
-}
+// OAuth client creation is now handled by createOAuthClient in common/oauth.js
 
 async function uploadDriveFile({ drive, name, mimeType, parents, buffer }) {
   const res = await drive.files.create({
@@ -247,6 +250,10 @@ export const createRentalPackage = onRequest(
       OAUTH_CLIENT_SECRET,
       OAUTH_REDIRECT_URI,
       DRIVE_REFRESH_TOKEN,
+      SMTP_EMAIL_GMAIL,
+      SMTP_PASSWORD_GMAIL,
+      SMTP_EMAIL_OUTLOOK,
+      SMTP_PASSWORD_OUTLOOK,
       SMTP_EMAIL,
       SMTP_PASSWORD,
       ADMIN_EMAIL,
@@ -370,7 +377,9 @@ export const createRentalPackage = onRequest(
           costPerDay,
         };
 
-        const oauth2Client = oauthClientFromSecrets({
+        // Create OAuth client with automatic token validation
+        // This will throw a clear error if the refresh token is invalid
+        const oauth2Client = await createOAuthClient({
           clientId: OAUTH_CLIENT_ID.value(),
           clientSecret: OAUTH_CLIENT_SECRET.value(),
           redirectUri: OAUTH_REDIRECT_URI.value(),
